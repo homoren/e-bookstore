@@ -8,6 +8,11 @@ spring:
     # 可用环境变量 DB_PASSWORD 覆盖
     password: ${DB_PASSWORD:123456}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  # Flyway 数据库迁移:现有库无历史表时按 0 版本基线,再从 V1 开始执行(迁移 SQL 均幂等)
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 0
+    locations: classpath:db/migration
 
 # JWT 配置
 jwt:
