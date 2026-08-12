@@ -4,9 +4,9 @@ import com.ebookstore.common.BusinessException;
 import com.ebookstore.dto.CartItemDTO;
 import com.ebookstore.dto.CreateOrderRequest;
 import com.ebookstore.dto.OrderDTO;
-import com.ebookstore.dto.OrderItemDTO;
 import com.ebookstore.entity.Order;
 import com.ebookstore.entity.OrderItem;
+import com.ebookstore.map.DTOMapper;
 import com.ebookstore.mapper.CartMapper;
 import com.ebookstore.mapper.OrderMapper;
 import com.ebookstore.service.OrderService;
@@ -29,6 +29,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final CartMapper cartMapper;
     private final OrderNoGenerator orderNoGenerator;
+    private final DTOMapper dtoMapper;
 
     @Override
     @Transactional
@@ -186,37 +187,8 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderDTO buildOrderDTO(Order order, List<OrderItem> items) {
-        OrderDTO dto = new OrderDTO();
-        dto.setId(order.getId());
-        dto.setOrderNo(order.getOrderNo());
-        dto.setUserId(order.getUserId());
-        dto.setTotalAmount(order.getTotalAmount());
-        dto.setStatus(order.getStatus());
-        dto.setReceiverName(order.getReceiverName());
-        dto.setReceiverPhone(order.getReceiverPhone());
-        dto.setReceiverAddress(order.getReceiverAddress());
-        dto.setRemark(order.getRemark());
-        dto.setPaymentDeadline(order.getPaymentDeadline());
-        dto.setDeliveryDeadline(order.getDeliveryDeadline());
-        dto.setPaidAt(order.getPaidAt());
-        dto.setDeliveredAt(order.getDeliveredAt());
-        dto.setCompletedAt(order.getCompletedAt());
-        dto.setCreatedAt(order.getCreatedAt());
-
-        List<OrderItemDTO> itemDTOs = new ArrayList<>();
-        for (OrderItem item : items) {
-            OrderItemDTO itemDTO = new OrderItemDTO();
-            itemDTO.setId(item.getId());
-            itemDTO.setBookId(item.getBookId());
-            itemDTO.setBookTitle(item.getBookTitle());
-            itemDTO.setBookAuthor(item.getBookAuthor());
-            itemDTO.setBookPrice(item.getBookPrice());
-            itemDTO.setQuantity(item.getQuantity());
-            itemDTO.setSubtotal(item.getSubtotal());
-            itemDTOs.add(itemDTO);
-        }
-        dto.setItems(itemDTOs);
-
+        OrderDTO dto = dtoMapper.toOrderDTO(order);
+        dto.setItems(dtoMapper.toOrderItemDTOs(items));
         return dto;
     }
 

@@ -3,6 +3,7 @@ package com.ebookstore.service.impl;
 import com.ebookstore.common.BusinessException;
 import com.ebookstore.dto.*;
 import com.ebookstore.entity.*;
+import com.ebookstore.map.DTOMapper;
 import com.ebookstore.mapper.*;
 import com.ebookstore.service.AdminService;
 import com.ebookstore.utils.PurchaseNoGenerator;
@@ -29,6 +30,7 @@ public class AdminServiceImpl implements AdminService {
     private final CustomerMapper customerMapper;
     private final OrderMapper orderMapper;
     private final PurchaseNoGenerator purchaseNoGenerator;
+    private final DTOMapper dtoMapper;
 
     // ========== 进货管理 ==========
     @Override
@@ -320,100 +322,28 @@ public class AdminServiceImpl implements AdminService {
                 .toList();
     }
 
-    // ========== 辅助方法 ==========
+    // ========== 辅助方法(实体 -> DTO 由 MapStruct 生成) ==========
     private PurchaseDTO buildPurchaseDTO(Purchase purchase, List<PurchaseItem> items) {
-        PurchaseDTO dto = new PurchaseDTO();
-        dto.setId(purchase.getId());
-        dto.setPurchaseNo(purchase.getPurchaseNo());
-        dto.setSupplier(purchase.getSupplier());
-        dto.setTotalCost(purchase.getTotalCost());
-        dto.setStatus(purchase.getStatus());
-        dto.setRemark(purchase.getRemark());
-        dto.setCreatedAt(purchase.getCreatedAt());
-
-        List<PurchaseItemDTO> itemDTOs = new ArrayList<>();
-        for (PurchaseItem item : items) {
-            PurchaseItemDTO itemDTO = new PurchaseItemDTO();
-            itemDTO.setId(item.getId());
-            itemDTO.setBookId(item.getBookId());
-            itemDTO.setBookTitle(item.getBookTitle());
-            itemDTO.setQuantity(item.getQuantity());
-            itemDTO.setCostPrice(item.getCostPrice());
-            itemDTO.setSubtotal(item.getSubtotal());
-            itemDTOs.add(itemDTO);
-        }
-        dto.setItems(itemDTOs);
-
+        PurchaseDTO dto = dtoMapper.toPurchaseDTO(purchase);
+        dto.setItems(dtoMapper.toPurchaseItemDTOs(items));
         return dto;
     }
 
     private AnnouncementDTO buildAnnouncementDTO(Announcement announcement) {
-        AnnouncementDTO dto = new AnnouncementDTO();
-        dto.setId(announcement.getId());
-        dto.setTitle(announcement.getTitle());
-        dto.setContent(announcement.getContent());
-        dto.setIsTop(announcement.getIsTop());
-        dto.setViewCount(announcement.getViewCount());
-        dto.setCreatedAt(announcement.getCreatedAt());
-        return dto;
+        return dtoMapper.toAnnouncementDTO(announcement);
     }
 
     private MessageDTO buildMessageDTO(Message message) {
-        MessageDTO dto = new MessageDTO();
-        dto.setId(message.getId());
-        dto.setUserId(message.getUserId());
-        dto.setUsername(message.getUsername());
-        dto.setContent(message.getContent());
-        dto.setReply(message.getReply());
-        dto.setRepliedAt(message.getRepliedAt());
-        dto.setCreatedAt(message.getCreatedAt());
-        return dto;
+        return dtoMapper.toMessageDTO(message);
     }
 
     private DailySettlementDTO buildSettlementDTO(DailySettlement settlement) {
-        DailySettlementDTO dto = new DailySettlementDTO();
-        dto.setId(settlement.getId());
-        dto.setSettleDate(settlement.getSettleDate());
-        dto.setTotalSales(settlement.getTotalSales());
-        dto.setTotalCost(settlement.getTotalCost());
-        dto.setTotalProfit(settlement.getTotalProfit());
-        dto.setOrderCount(settlement.getOrderCount());
-        dto.setPaidOrderCount(settlement.getPaidOrderCount());
-        return dto;
+        return dtoMapper.toSettlementDTO(settlement);
     }
 
     private OrderDTO buildOrderDTO(Order order, List<OrderItem> items) {
-        OrderDTO dto = new OrderDTO();
-        dto.setId(order.getId());
-        dto.setOrderNo(order.getOrderNo());
-        dto.setUserId(order.getUserId());
-        dto.setTotalAmount(order.getTotalAmount());
-        dto.setStatus(order.getStatus());
-        dto.setReceiverName(order.getReceiverName());
-        dto.setReceiverPhone(order.getReceiverPhone());
-        dto.setReceiverAddress(order.getReceiverAddress());
-        dto.setRemark(order.getRemark());
-        dto.setPaymentDeadline(order.getPaymentDeadline());
-        dto.setDeliveryDeadline(order.getDeliveryDeadline());
-        dto.setPaidAt(order.getPaidAt());
-        dto.setDeliveredAt(order.getDeliveredAt());
-        dto.setCompletedAt(order.getCompletedAt());
-        dto.setCreatedAt(order.getCreatedAt());
-
-        List<OrderItemDTO> itemDTOs = new ArrayList<>();
-        for (OrderItem item : items) {
-            OrderItemDTO itemDTO = new OrderItemDTO();
-            itemDTO.setId(item.getId());
-            itemDTO.setBookId(item.getBookId());
-            itemDTO.setBookTitle(item.getBookTitle());
-            itemDTO.setBookAuthor(item.getBookAuthor());
-            itemDTO.setBookPrice(item.getBookPrice());
-            itemDTO.setQuantity(item.getQuantity());
-            itemDTO.setSubtotal(item.getSubtotal());
-            itemDTOs.add(itemDTO);
-        }
-        dto.setItems(itemDTOs);
-
+        OrderDTO dto = dtoMapper.toOrderDTO(order);
+        dto.setItems(dtoMapper.toOrderItemDTOs(items));
         return dto;
     }
 }
