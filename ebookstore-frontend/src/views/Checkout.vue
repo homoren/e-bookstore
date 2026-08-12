@@ -169,7 +169,7 @@ const rules = {
 
 const totalAmount = computed(() => {
   return orderItems.value.reduce((sum, item) => {
-    return sum + item.price * item.quantity
+    return sum + (item.price ?? 0) * (item.quantity ?? 0)
   }, 0)
 })
 

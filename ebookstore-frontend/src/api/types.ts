@@ -1,149 +1,103 @@
-// 与后端 DTO 对齐的前端类型定义
-export interface Category {
+import type { components } from './generated'
+
+// 以 SpringDoc 生成的 OpenAPI schema 为唯一来源(运行 npm run gen:types 重新生成后自动同步)。
+// 生成字段默认可选,此处用交叉类型补回前端实际必用的必填字段。
+type Schema = components['schemas']
+
+export type Category = Schema['Category'] & {
   id: number
   name: string
   parentId: number
   sortOrder: number
-  createdAt?: string
   books?: BookList[]
 }
 
-export interface BookList {
+// 列表接口未返回 salesCount/categoryId 等,前端展示需要,标可选
+export type BookList = Schema['BookListDTO'] & {
   id: number
   title: string
-  author?: string
-  coverImage?: string
   price: number
   stock: number
-  difficultyLevel?: number
-  publisher?: string
+  salesCount?: number
+  categoryId?: number
+  costPrice?: number
+  status?: number
+  isbn?: string
+  description?: string
+}
+
+export type BookDetail = Schema['BookDetailDTO'] & {
+  id: number
+  stock: number
+  categoryId?: number
+  costPrice?: number
+  status?: number
   salesCount?: number
 }
 
-export interface BookDetail extends BookList {
-  isbn?: string
-  publishDate?: string
-  categoryId?: number
-  costPrice?: number
-  description?: string
-  detailHtml?: string
-  sampleCodeUrl?: string
-  categoryName?: string
-  parentCategoryName?: string
-  status?: number
-}
-
-export interface UserInfo {
+export type UserInfo = Schema['UserInfoDTO'] & {
   id: number
   username: string
-  realName?: string
-  email?: string
-  phone?: string
-  address?: string
   role: number
 }
 
-export interface LoginResult {
+export type LoginResult = Schema['LoginResponse'] & {
   token: string
   username: string
-  realName?: string
   role: number
 }
 
-export interface CartItem {
+export type CartItem = Schema['CartItemDTO'] & {
   id: number
   bookId: number
-  bookTitle: string
-  bookAuthor?: string
-  coverImage?: string
   price: number
   quantity: number
   stock: number
 }
 
-export interface OrderItem {
-  id?: number
+export type OrderItem = Schema['OrderItemDTO'] & {
   bookId: number
-  bookTitle: string
-  bookAuthor?: string
   bookPrice: number
   quantity: number
-  subtotal: number
 }
 
-export interface Order {
+export type Order = Schema['OrderDTO'] & {
   id: number
-  orderNo: string
-  userId: number
   totalAmount: number
   status: number
-  receiverName: string
-  receiverPhone: string
-  receiverAddress: string
-  remark?: string
-  paymentDeadline?: string
-  deliveryDeadline?: string
-  paidAt?: string
-  deliveredAt?: string
-  completedAt?: string
-  createdAt?: string
-  items?: OrderItem[]
 }
 
-export interface Announcement {
+export type Announcement = Schema['AnnouncementDTO'] & {
   id: number
   title: string
   content: string
-  isTop?: number
   status?: number
-  viewCount?: number
-  createdAt?: string
 }
 
-export interface Message {
+export type Message = Schema['MessageDTO'] & {
   id: number
-  userId?: number | null
   username: string
   content: string
-  reply?: string
-  repliedAt?: string
   status?: number
-  createdAt?: string
 }
 
-export interface PurchaseItem {
-  id?: number
-  bookId: number
-  bookTitle: string
-  quantity: number
-  costPrice: number
-  subtotal: number
-}
-
-export interface Purchase {
+export type Purchase = Schema['PurchaseDTO'] & {
   id: number
-  purchaseNo: string
-  supplier?: string
   totalCost: number
   status: number
-  remark?: string
-  createdAt?: string
-  items?: PurchaseItem[]
 }
 
-export interface Customer {
-  userId: number
-  username: string
-  realName?: string
-  email?: string
-  phone?: string
-  address?: string
-  role: number
-  status: number
-  createdAt?: string
+export type PurchaseItem = Schema['PurchaseItemDTO'] & {
+  bookId: number
+  quantity: number
+  costPrice: number
 }
 
-export interface DailySettlement {
+export type Customer = Schema['CustomerDTO'] & {
+  userId?: number
+}
+
+export type DailySettlement = Schema['DailySettlementDTO'] & {
   id: number
   settleDate: string
   totalSales: number

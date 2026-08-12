@@ -121,7 +121,7 @@ import { useRouter } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getOrderList, cancelOrder } from '@/api/order'
-import type { Order, OrderItem } from '@/api/types'
+import type { Order } from '@/api/types'
 
 const router = useRouter()
 
@@ -196,12 +196,13 @@ const isOverdue = (deadline?: string) => {
 }
 
 const getTotalQuantity = (order: Order) => {
-  return order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
+  return order.items?.reduce((sum, item) => sum + (item.quantity ?? 0), 0) || 0
 }
 
-const getBookCover = (_item?: OrderItem) => {
+const getBookCover = (_item?: unknown) => {
   return '/placeholder-book.jpg'
 }
+
 
 const viewDetail = (id: number) => {
   router.push(`/order/${id}`)

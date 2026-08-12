@@ -128,7 +128,7 @@ const selectedIds = computed(() => selectedItems.value.map(item => item.id))
 
 const totalPrice = computed(() => {
   return selectedItems.value.reduce((sum, item) => {
-    return sum + item.price * item.quantity
+    return sum + (item.price ?? 0) * (item.quantity ?? 0)
   }, 0)
 })
 
