@@ -38,6 +38,5 @@ __screenshots__/
 # Vite
 *.timestamp-*-*.mjs
 
-# unplugin-auto-import / unplugin-vue-components 生成的类型声明
-src/auto-imports.d.ts
-src/components.d.ts
+# 注:src/auto-imports.d.ts / src/components.d.ts 已纳入版本控制
+# (CI 的 vue-tsc type-check 需要它们,若依赖变更记得重新生成后提交)
