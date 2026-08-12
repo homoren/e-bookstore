@@ -115,17 +115,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getOrderList, cancelOrder } from '@/api/order'
+import type { Order, OrderItem } from '@/api/types'
 
 const router = useRouter()
 
 const loading = ref(false)
-const orderList = ref([])
+const orderList = ref<Order[]>([])
 const activeStatus = ref('all')
 
 onMounted(() => {
@@ -154,7 +155,7 @@ const handleStatusChange = () => {
   loadOrders()
 }
 
-const formatTime = (time) => {
+const formatTime = (time?: string) => {
   if (!time) return ''
   return new Date(time).toLocaleString('zh-CN', {
     year: 'numeric',
@@ -165,8 +166,8 @@ const formatTime = (time) => {
   })
 }
 
-const getStatusText = (status) => {
-  const map = {
+const getStatusText = (status: number) => {
+  const map: Record<number, string> = {
     0: '待付款',
     1: '待汇款确认',
     2: '待配送',
@@ -177,8 +178,8 @@ const getStatusText = (status) => {
   return map[status] || '未知'
 }
 
-const getStatusType = (status) => {
-  const map = {
+const getStatusType = (status: number) => {
+  const map: Record<number, 'warning' | 'info' | 'primary' | 'success' | 'danger'> = {
     0: 'warning',
     1: 'info',
     2: 'primary',
@@ -189,24 +190,24 @@ const getStatusType = (status) => {
   return map[status] || 'info'
 }
 
-const isOverdue = (deadline) => {
+const isOverdue = (deadline?: string) => {
   if (!deadline) return false
   return new Date(deadline) < new Date()
 }
 
-const getTotalQuantity = (order) => {
+const getTotalQuantity = (order: Order) => {
   return order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0
 }
 
-const getBookCover = () => {
+const getBookCover = (_item?: OrderItem) => {
   return '/placeholder-book.jpg'
 }
 
-const viewDetail = (id) => {
+const viewDetail = (id: number) => {
   router.push(`/order/${id}`)
 }
 
-const handleCancel = async (id) => {
+const handleCancel = async (id: number) => {
   try {
     await ElMessageBox.confirm('确定要取消该订单吗？', '提示', {
       confirmButtonText: '确定',
@@ -224,7 +225,7 @@ const handleCancel = async (id) => {
   }
 }
 
-const showPaymentInfo = (order) => {
+const showPaymentInfo = (order: Order) => {
   ElMessageBox.alert(
     `订单号：${order.orderNo}<br>应付金额：¥${order.totalAmount}<br><br>
      汇款账户：小童书店<br>

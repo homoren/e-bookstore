@@ -105,20 +105,21 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getLevel1Categories, getLevel2Categories, getBookPage } from '@/api/book'
+import type { BookList, Category } from '@/api/types'
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
-const categories = ref([])
-const subCategories = ref([])
-const bookList = ref([])
+const categories = ref<Category[]>([])
+const subCategories = ref<Category[]>([])
+const bookList = ref<BookList[]>([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(12)
@@ -126,8 +127,8 @@ const sortBy = ref('default')
 
 const activeCategory = ref('')
 const activeSubCategory = ref('')
-const currentCategoryId = ref(null)
-const currentSubCategoryId = ref(null)
+const currentCategoryId = ref<number | null>(null)
+const currentSubCategoryId = ref<number | null>(null)
 
 const currentCategory = computed(() => {
   return categories.value.find((c) => c.id === currentCategoryId.value)
@@ -145,13 +146,13 @@ onMounted(async () => {
   const subCategoryId = route.query.subCategory
 
   if (categoryId) {
-    currentCategoryId.value = parseInt(categoryId)
+    currentCategoryId.value = parseInt(String(categoryId))
     activeCategory.value = `cat-${categoryId}`
-    await loadSubCategories(categoryId)
+    await loadSubCategories(parseInt(String(categoryId)))
   }
 
   if (subCategoryId) {
-    currentSubCategoryId.value = parseInt(subCategoryId)
+    currentSubCategoryId.value = parseInt(String(subCategoryId))
     activeSubCategory.value = `sub-${subCategoryId}`
   }
 
@@ -175,7 +176,7 @@ const loadCategories = async () => {
   }
 }
 
-const loadSubCategories = async (parentId) => {
+const loadSubCategories = async (parentId: number) => {
   try {
     const res = await getLevel2Categories(parentId)
     subCategories.value = Array.isArray(res) ? res : res.data || []
@@ -189,10 +190,10 @@ const loadBooks = async () => {
   loading.value = true
   try {
     // 从 URL 读取关键词
-    const keyword = route.query.keyword || ''
+    const keyword = String(route.query.keyword || '')
 
     // 服务端分页参数:二级分类 categoryId / 一级分类 parentId 二选一
-    const params = {
+    const params: Record<string, unknown> = {
       page: currentPage.value,
       pageSize: pageSize.value,
       sort: sortBy.value,
@@ -219,7 +220,7 @@ const loadBooks = async () => {
   }
 }
 
-const handleCategorySelect = async (index) => {
+const handleCategorySelect = async (index: string) => {
   const catId = parseInt(index.replace('cat-', ''))
   currentCategoryId.value = catId
   currentSubCategoryId.value = null
@@ -233,7 +234,7 @@ const handleCategorySelect = async (index) => {
   router.replace({ query: { category: catId } })
 }
 
-const handleSubCategorySelect = (index) => {
+const handleSubCategorySelect = (index: string) => {
   const subId = parseInt(index.replace('sub-', ''))
   currentSubCategoryId.value = subId
   currentPage.value = 1
@@ -248,23 +249,23 @@ const handleSubCategorySelect = (index) => {
   })
 }
 
-const changeSort = (type) => {
+const changeSort = (type: string) => {
   sortBy.value = type
   currentPage.value = 1
   loadBooks()
 }
 
-const handlePageChange = (page) => {
+const handlePageChange = (page: number) => {
   currentPage.value = page
   loadBooks()
 }
 
-const goToDetail = (id) => {
+const goToDetail = (id: number) => {
   router.push(`/book/${id}`)
 }
 
-const getDifficultyText = (level) => {
-  const map = { 1: '入门', 2: '进阶', 3: '高级' }
+const getDifficultyText = (level: number) => {
+  const map: Record<number, string> = { 1: '入门', 2: '进阶', 3: '高级' }
   return map[level] || ''
 }
 </script>

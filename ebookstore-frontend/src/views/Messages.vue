@@ -79,17 +79,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getMessages, createMessage } from '@/api/message'
+import type { Message } from '@/api/types'
 
 const loading = ref(false)
 const submitting = ref(false)
 const showForm = ref(false)
-const messages = ref([])
-const formRef = ref(null)
+const messages = ref<Message[]>([])
+const formRef = ref<{ validate: () => Promise<boolean> } | null>(null)
 
 const form = ref({
   content: ''
@@ -118,6 +119,7 @@ const loadMessages = async () => {
 }
 
 const submitMessage = async () => {
+  if (!formRef.value) return
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
@@ -135,7 +137,7 @@ const submitMessage = async () => {
   }
 }
 
-const formatTime = (time) => {
+const formatTime = (time?: string) => {
   if (!time) return ''
   return new Date(time).toLocaleString('zh-CN')
 }

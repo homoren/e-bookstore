@@ -129,7 +129,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -137,13 +137,14 @@ import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getCartList } from '@/api/cart'
 import { createOrder } from '@/api/order'
+import type { CartItem } from '@/api/types'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
 const submitting = ref(false)
-const orderItems = ref([])
+const orderItems = ref<CartItem[]>([])
 const paymentMethod = ref('remittance')
 
 const orderForm = ref({
@@ -184,7 +185,7 @@ onMounted(async () => {
   await loadOrderItems(cartIds)
 })
 
-const loadOrderItems = async (cartIds) => {
+const loadOrderItems = async (cartIds: number[]) => {
   try {
     const res = await getCartList()
     const allItems = res.data || []

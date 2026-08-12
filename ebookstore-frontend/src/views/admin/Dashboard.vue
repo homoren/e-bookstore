@@ -103,11 +103,12 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getTodaySettlement } from '@/api/admin'
 import { getAllOrders, confirmPayment, confirmDelivery } from '@/api/admin'
+import type { Order } from '@/api/types'
 
 const router = useRouter()
 
@@ -118,7 +119,7 @@ const todayData = ref({
   totalProfit: 0
 })
 const customerCount = ref(0)
-const pendingOrders = ref([])
+const pendingOrders = ref<Order[]>([])
 
 onMounted(async () => {
   await loadTodayData()
@@ -147,7 +148,7 @@ const loadPendingOrders = async () => {
   }
 }
 
-const handleConfirmPayment = async (id) => {
+const handleConfirmPayment = async (id: number) => {
   try {
     await ElMessageBox.confirm('确认已收到该订单的汇款？', '确认收款', {
       confirmButtonText: '确定',
@@ -162,7 +163,7 @@ const handleConfirmPayment = async (id) => {
   }
 }
 
-const handleConfirmDelivery = async (id) => {
+const handleConfirmDelivery = async (id: number) => {
   try {
     await ElMessageBox.confirm('确认该订单已配送？', '确认配送', {
       confirmButtonText: '确定',
@@ -177,8 +178,8 @@ const handleConfirmDelivery = async (id) => {
   }
 }
 
-const getStatusText = (status) => {
-  const map = {
+const getStatusText = (status: number) => {
+  const map: Record<number, string> = {
     0: '待付款',
     1: '待汇款确认',
     2: '待配送',
@@ -189,8 +190,8 @@ const getStatusText = (status) => {
   return map[status] || '未知'
 }
 
-const getStatusType = (status) => {
-  const map = {
+const getStatusType = (status: number) => {
+  const map: Record<number, 'warning' | 'info' | 'primary' | 'success' | 'danger'> = {
     0: 'warning',
     1: 'info',
     2: 'primary',
@@ -201,7 +202,7 @@ const getStatusType = (status) => {
   return map[status] || 'info'
 }
 
-const formatTime = (time) => {
+const formatTime = (time?: string) => {
   if (!time) return ''
   return new Date(time).toLocaleString('zh-CN')
 }

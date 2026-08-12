@@ -74,16 +74,17 @@
   </header>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getLevel1Categories } from '@/api/book'
+import type { Category } from '@/api/types'
 
 const router = useRouter()
 const userStore = useUserStore()
 
-const categories = ref([])
+const categories = ref<Category[]>([])
 const cartCount = ref(0)
 
 // 👇 修复：搜索关键词
@@ -98,7 +99,7 @@ onMounted(async () => {
   }
 })
 
-const handleCommand = (command) => {
+const handleCommand = (command: string) => {
   switch (command) {
     case 'orders':
       router.push('/orders')

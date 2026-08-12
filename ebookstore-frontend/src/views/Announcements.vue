@@ -48,16 +48,17 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getPublishedAnnouncements, getAnnouncementDetail } from '@/api/announcement'
+import type { Announcement } from '@/api/types'
 
 const router = useRouter()
 const loading = ref(false)
-const announcements = ref([])
+const announcements = ref<Announcement[]>([])
 
 onMounted(() => {
   loadAnnouncements()
@@ -75,25 +76,26 @@ const loadAnnouncements = async () => {
   }
 }
 
-const getPreview = (content) => {
+const getPreview = (content?: string) => {
   if (!content) return ''
   const text = content.replace(/<[^>]+>/g, '')
   return text.length > 150 ? text.substring(0, 150) + '...' : text
 }
 
-const viewDetail = async (id) => {
+const viewDetail = async (id: number) => {
   try {
     const res = await getAnnouncementDetail(id)
-    const detail = res.data || res
+    const detail = res.data
 
-    const content = detail.content || ''
+    const content = detail?.content || ''
     const w = window.open('', '_blank', 'width=800,height=600')
+    if (!w) return
     w.document.write(`
       <html>
-        <head><title>${detail.title}</title></head>
+        <head><title>${detail?.title ?? ''}</title></head>
         <body style="padding: 30px; font-family: sans-serif; line-height: 1.8;">
-          <h1>${detail.title}</h1>
-          <p style="color: #999; margin-bottom: 20px;">${formatTime(detail.createdAt)} | ${detail.viewCount} 次阅读</p>
+          <h1>${detail?.title ?? ''}</h1>
+          <p style="color: #999; margin-bottom: 20px;">${formatTime(detail?.createdAt)} | ${detail?.viewCount ?? 0} 次阅读</p>
           <hr>
           <div>${content}</div>
         </body>
@@ -105,7 +107,7 @@ const viewDetail = async (id) => {
   }
 }
 
-const formatTime = (time) => {
+const formatTime = (time?: string) => {
   if (!time) return ''
   return new Date(time).toLocaleString('zh-CN')
 }

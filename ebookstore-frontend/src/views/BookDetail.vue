@@ -104,7 +104,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -112,28 +112,29 @@ import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getBookDetail } from '@/api/book'
 import { addToCart as addToCartApi } from '@/api/cart'
+import type { BookDetail } from '@/api/types'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
 const loading = ref(false)
-const book = ref({})
+const book = ref<BookDetail>({} as BookDetail)
 const quantity = ref(1)
 const activeTab = ref('desc')
 
 onMounted(async () => {
   const bookId = route.params.id
   if (bookId) {
-    await loadBook(bookId)
+    await loadBook(String(bookId))
   }
 })
 
-const loadBook = async (id) => {
+const loadBook = async (id: number | string) => {
   loading.value = true
   try {
     const res = await getBookDetail(id)
-    book.value = res.data || res
+    book.value = res.data || ({} as BookDetail)
   } catch (error) {
     console.error('获取图书详情失败', error)
     ElMessage.error('获取图书信息失败')
@@ -176,9 +177,9 @@ const goToCategory = () => {
   router.push('/books')
 }
 
-const getDifficultyText = (level) => {
-  const map = { 1: '入门', 2: '进阶', 3: '高级' }
-  return map[level] || ''
+const getDifficultyText = (level?: number) => {
+  const map: Record<number, string> = { 1: '入门', 2: '进阶', 3: '高级' }
+  return level ? map[level] || '' : ''
 }
 </script>
 

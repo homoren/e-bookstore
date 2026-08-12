@@ -119,16 +119,17 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getPurchases, createPurchase } from '@/api/admin'
+import type { Purchase } from '@/api/types'
 
 const loading = ref(false)
 const submitting = ref(false)
-const purchases = ref([])
+const purchases = ref<Purchase[]>([])
 const showAddDialog = ref(false)
 const showDetailDialog = ref(false)
-const currentPurchase = ref(null)
+const currentPurchase = ref<Purchase | null>(null)
 
 const purchaseForm = ref({
   supplier: '',
@@ -158,7 +159,7 @@ const addItem = () => {
   purchaseForm.value.items.push({ bookId: null, bookTitle: '', quantity: 1, costPrice: 0 })
 }
 
-const removeItem = (index) => {
+const removeItem = (index: number) => {
   purchaseForm.value.items.splice(index, 1)
 }
 
@@ -187,12 +188,12 @@ const submitPurchase = async () => {
   }
 }
 
-const viewDetail = (row) => {
+const viewDetail = (row: Purchase) => {
   currentPurchase.value = row
   showDetailDialog.value = true
 }
 
-const formatTime = (time) => {
+const formatTime = (time?: string) => {
   if (!time) return ''
   return new Date(time).toLocaleString('zh-CN')
 }

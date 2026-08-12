@@ -52,20 +52,21 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getSettlements, generateSettlement } from '@/api/admin'
+import type { DailySettlement } from '@/api/types'
 
 const loading = ref(false)
 const generating = ref(false)
-const settlements = ref([])
-const dateRange = ref([])
+const settlements = ref<DailySettlement[]>([])
+const dateRange = ref<Date[]>([])
 
 onMounted(() => {
   loadSettlements()
 })
 
-const loadSettlements = async (startDate, endDate) => {
+const loadSettlements = async (startDate?: string, endDate?: string) => {
   loading.value = true
   try {
     let res
@@ -82,9 +83,9 @@ const loadSettlements = async (startDate, endDate) => {
   }
 }
 
-const handleDateChange = (val) => {
+const handleDateChange = (val: Date[] | string[] | null) => {
   if (val && val.length === 2) {
-    loadSettlements(val[0], val[1])
+    loadSettlements(String(val[0]), String(val[1]))
   } else {
     loadSettlements()
   }

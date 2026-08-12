@@ -103,21 +103,22 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getOrderDetail, cancelOrder } from '@/api/order'
+import type { Order } from '@/api/types'
 
 const router = useRouter()
 const route = useRoute()
 
 const loading = ref(false)
-const order = ref({})
+const order = ref<Order>({} as Order)
 
 const statusClass = computed(() => {
-  const map = {
+  const map: Record<number, string> = {
     0: 'status-warning',
     1: 'status-info',
     2: 'status-primary',
@@ -131,15 +132,15 @@ const statusClass = computed(() => {
 onMounted(async () => {
   const id = route.params.id
   if (id) {
-    await loadOrder(id)
+    await loadOrder(String(id))
   }
 })
 
-const loadOrder = async (id) => {
+const loadOrder = async (id: number | string) => {
   loading.value = true
   try {
     const res = await getOrderDetail(id)
-    order.value = res.data || res
+    order.value = res.data || ({} as Order)
   } catch (error) {
     console.error(error)
     router.push('/orders')
@@ -148,8 +149,8 @@ const loadOrder = async (id) => {
   }
 }
 
-const getStatusText = (status) => {
-  const map = {
+const getStatusText = (status: number) => {
+  const map: Record<number, string> = {
     0: '待付款',
     1: '待汇款确认',
     2: '待配送',
@@ -160,7 +161,7 @@ const getStatusText = (status) => {
   return map[status] || '未知'
 }
 
-const formatTime = (time) => {
+const formatTime = (time?: string) => {
   if (!time) return ''
   return new Date(time).toLocaleString('zh-CN')
 }

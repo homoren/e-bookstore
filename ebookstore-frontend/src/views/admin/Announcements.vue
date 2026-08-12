@@ -83,7 +83,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue'
 import {
   getAllAnnouncements,
@@ -91,13 +91,14 @@ import {
   updateAnnouncement,
   deleteAnnouncement
 } from '@/api/admin'
+import type { Announcement } from '@/api/types'
 
 const loading = ref(false)
 const saving = ref(false)
-const announcements = ref([])
+const announcements = ref<Announcement[]>([])
 const dialogVisible = ref(false)
-const editingId = ref(null)
-const formRef = ref(null)
+const editingId = ref<number | null>(null)
+const formRef = ref<{ validate: () => Promise<boolean> } | null>(null)
 
 const form = reactive({
   title: '',
@@ -138,7 +139,7 @@ const openCreateDialog = () => {
   dialogVisible.value = true
 }
 
-const openEditDialog = (row) => {
+const openEditDialog = (row: Announcement) => {
   editingId.value = row.id
   form.title = row.title
   form.content = row.content
@@ -153,7 +154,7 @@ const resetForm = () => {
   form.isTop = false
 }
 
-const togglePublish = async (row) => {
+const togglePublish = async (row: Announcement) => {
   const action = row.status === 1 ? '下架' : '发布'
   try {
     await ElMessageBox.confirm(`确定要${action}该公告吗？`, '提示', {
@@ -174,7 +175,7 @@ const togglePublish = async (row) => {
   }
 }
 
-const handleDelete = async (id) => {
+const handleDelete = async (id: number) => {
   try {
     await ElMessageBox.confirm('确定要删除该公告吗？此操作不可恢复。', '警告', {
       confirmButtonText: '确定删除',
@@ -191,6 +192,7 @@ const handleDelete = async (id) => {
 }
 
 const handleSave = async () => {
+  if (!formRef.value) return
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
@@ -219,7 +221,7 @@ const handleSave = async () => {
   }
 }
 
-const formatTime = (time) => {
+const formatTime = (time?: string) => {
   if (!time) return ''
   return new Date(time).toLocaleString('zh-CN')
 }

@@ -5,7 +5,7 @@
     <!-- 轮播图 -->
     <div class="banner">
       <el-carousel height="400px">
-        <el-carousel-item v-for="item in banners" :key="item">
+        <el-carousel-item v-for="item in banners" :key="item.title">
           <div class="banner-item" :style="{ background: item.color }">
             <h2>{{ item.title }}</h2>
             <p>{{ item.desc }}</p>
@@ -56,13 +56,14 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getLevel1Categories, getBookList } from '@/api/book'
 import { getPublishedAnnouncements } from '@/api/announcement'
+import type { Announcement, Category } from '@/api/types'
 
 const router = useRouter()
 
@@ -72,8 +73,8 @@ const banners = ref([
   { title: '新书上架', desc: '最新技术图书，抢先阅读', color: '#4facfe' },
 ])
 
-const categories = ref([])
-const announcements = ref([])
+const categories = ref<Category[]>([])
+const announcements = ref<Announcement[]>([])
 
 onMounted(async () => {
   try {
@@ -100,7 +101,7 @@ onMounted(async () => {
   }
 })
 
-const goToDetail = (id) => {
+const goToDetail = (id: number) => {
   router.push(`/book/${id}`)
 }
 </script>

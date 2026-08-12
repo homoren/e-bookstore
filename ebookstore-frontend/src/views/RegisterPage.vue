@@ -91,7 +91,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { register, checkUsername as checkUsernameApi } from '@/api/user'
@@ -99,7 +99,7 @@ import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 
 const router = useRouter()
-const formRef = ref(null)
+const formRef = ref<{ validate: () => Promise<boolean> } | null>(null)
 const loading = ref(false)
 const usernameChecked = ref(false)
 const usernameExists = ref(false)
@@ -114,7 +114,11 @@ const form = reactive({
   address: ''
 })
 
-const validateConfirmPassword = (rule, value, callback) => {
+const validateConfirmPassword = (
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void,
+) => {
   if (value !== form.password) {
     callback(new Error('两次输入的密码不一致'))
   } else {
@@ -167,6 +171,7 @@ const checkUsername = async () => {
 }
 
 const handleRegister = async () => {
+  if (!formRef.value) return
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 

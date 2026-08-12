@@ -38,12 +38,13 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getAllCustomers } from '@/api/admin'
+import type { Customer } from '@/api/types'
 
 const loading = ref(false)
-const customers = ref([])
+const customers = ref<Customer[]>([])
 
 onMounted(() => {
   loadCustomers()
@@ -61,7 +62,7 @@ const loadCustomers = async () => {
   }
 }
 
-const formatTime = (time) => {
+const formatTime = (time?: string) => {
   if (!time) return '-'
   return new Date(time).toLocaleString('zh-CN')
 }

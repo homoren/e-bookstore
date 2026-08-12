@@ -108,19 +108,21 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getCartList, updateCartItem, deleteCartItem, clearCart } from '@/api/cart'
+import type { CartItem } from '@/api/types'
 
 const router = useRouter()
 
 const loading = ref(false)
-const cartList = ref([])
-const selectedItems = ref([])
+const cartList = ref<CartItem[]>([])
+const selectedItems = ref<CartItem[]>([])
 const selectAll = ref(false)
+const tableRef = ref<{ toggleAllSelection: (val?: boolean) => void } | null>(null)
 
 const selectedIds = computed(() => selectedItems.value.map(item => item.id))
 
@@ -146,16 +148,16 @@ const loadCart = async () => {
   }
 }
 
-const handleSelectionChange = (selection) => {
+const handleSelectionChange = (selection: CartItem[]) => {
   selectedItems.value = selection
   selectAll.value = selection.length === cartList.value.length
 }
 
-const handleSelectAll = (val) => {
-  tableRef.value.toggleAllSelection(val)
+const handleSelectAll = (val: string | number | boolean) => {
+  tableRef.value?.toggleAllSelection(Boolean(val))
 }
 
-const handleQuantityChange = async (row) => {
+const handleQuantityChange = async (row: CartItem) => {
   if (row.quantity > row.stock) {
     ElMessage.warning(`库存不足，最多可购买 ${row.stock} 件`)
     row.quantity = row.stock
@@ -168,7 +170,7 @@ const handleQuantityChange = async (row) => {
   }
 }
 
-const handleDelete = async (id) => {
+const handleDelete = async (id: number) => {
   try {
     await ElMessageBox.confirm('确定要删除该商品吗？', '提示', {
       confirmButtonText: '确定',

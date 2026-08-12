@@ -147,23 +147,36 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getLevel1Categories, getLevel2Categories, getBookList } from '@/api/book'
 import { createBook, updateBook, toggleBookStatus } from '@/api/admin'
+import type { BookDetail, Category } from '@/api/types'
 
 const loading = ref(false)
 const saving = ref(false)
-const books = ref([])
-const categories = ref([])
-const allCategories = ref([])
-const filterCategory = ref(null)
+const books = ref<BookDetail[]>([])
+const categories = ref<Category[]>([])
+const allCategories = ref<Category[]>([])
+const filterCategory = ref<number | null>(null)
 const searchKeyword = ref('')
 const showEditDialog = ref(false)
-const editingBook = ref(null)
+const editingBook = ref<BookDetail | null>(null)
 const bookForm = ref(createEmptyForm())
 
-function createEmptyForm() {
+function createEmptyForm(): {
+  title: string
+  author: string
+  isbn: string
+  publisher: string
+  price: number
+  costPrice: number
+  stock: number
+  categoryId: number | null
+  difficultyLevel: number
+  description: string
+  coverImage: string
+} {
   return {
     title: '',
     author: '',
@@ -207,18 +220,17 @@ const loadCategories = async () => {
 const loadBooks = async () => {
   loading.value = true
   try {
-    let result = []
+    let result: BookDetail[] = []
 
     if (filterCategory.value) {
       const res = await getBookList(filterCategory.value)
-      result = res.data || res || []
+      result = (res.data || []) as BookDetail[]
     } else {
-      // ✅ 修复：遍历所有二级分类加载图书（不再使用不存在的方法）
+      // 遍历所有二级分类加载图书
       for (const cat of allCategories.value) {
         try {
           const res = await getBookList(cat.id)
-          const catBooks = res.data || res || []
-          result = result.concat(catBooks)
+          result = result.concat((res.data || []) as BookDetail[])
         } catch (e) {
           console.error(e)
         }
@@ -241,7 +253,7 @@ const loadBooks = async () => {
   }
 }
 
-const editBook = (row) => {
+const editBook = (row: BookDetail) => {
   editingBook.value = row
   bookForm.value = {
     title: row.title || '',
@@ -259,7 +271,7 @@ const editBook = (row) => {
   showEditDialog.value = true
 }
 
-const toggleStatus = async (row) => {
+const toggleStatus = async (row: BookDetail) => {
   const action = row.status === 1 ? '下架' : '上架'
   try {
     await ElMessageBox.confirm(`确定要${action}该图书吗？`, '提示', {

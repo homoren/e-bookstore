@@ -72,7 +72,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import {
   getAllMessages,
@@ -80,12 +80,13 @@ import {
   deleteMessage,
   updateMessageStatus
 } from '@/api/admin'
+import type { Message } from '@/api/types'
 
 const loading = ref(false)
 const replying = ref(false)
-const messages = ref([])
+const messages = ref<Message[]>([])
 const replyDialogVisible = ref(false)
-const currentMessage = ref(null)
+const currentMessage = ref<Message | null>(null)
 
 const replyForm = reactive({
   reply: ''
@@ -107,7 +108,7 @@ const loadMessages = async () => {
   }
 }
 
-const openReplyDialog = (row) => {
+const openReplyDialog = (row: Message) => {
   currentMessage.value = row
   replyForm.reply = row.reply || ''
   replyDialogVisible.value = true
@@ -121,7 +122,7 @@ const handleReply = async () => {
 
   replying.value = true
   try {
-    await replyMessage(currentMessage.value.id, { reply: replyForm.reply })
+    await replyMessage(currentMessage.value?.id ?? 0, { reply: replyForm.reply })
     ElMessage.success('回复成功')
     replyDialogVisible.value = false
     loadMessages()
@@ -132,7 +133,7 @@ const handleReply = async () => {
   }
 }
 
-const toggleStatus = async (row) => {
+const toggleStatus = async (row: Message) => {
   const action = row.status === 1 ? '隐藏' : '显示'
   try {
     await ElMessageBox.confirm(`确定要${action}该留言吗？`, '提示', {
@@ -150,7 +151,7 @@ const toggleStatus = async (row) => {
   }
 }
 
-const handleDelete = async (id) => {
+const handleDelete = async (id: number) => {
   try {
     await ElMessageBox.confirm('确定要删除该留言吗？此操作不可恢复。', '警告', {
       confirmButtonText: '确定删除',
@@ -166,7 +167,7 @@ const handleDelete = async (id) => {
   }
 }
 
-const formatTime = (time) => {
+const formatTime = (time?: string) => {
   if (!time) return ''
   return new Date(time).toLocaleString('zh-CN')
 }

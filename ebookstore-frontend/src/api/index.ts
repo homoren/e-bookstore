@@ -1,6 +1,21 @@
 import axios from 'axios'
+import type { AxiosRequestConfig } from 'axios'
 
-const request = axios.create({
+export interface Result<T = unknown> {
+  code: number
+  success: boolean
+  message: string
+  data: T
+}
+
+export interface PageResult<T> {
+  list: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+const instance = axios.create({
   // 走 Vite 代理,避免跨域;生产环境可改为后端地址
   baseURL: '/api',
   timeout: 10000,
@@ -10,7 +25,7 @@ const request = axios.create({
 })
 
 // 请求拦截器
-request.interceptors.request.use(
+instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
     if (token) {
@@ -23,8 +38,8 @@ request.interceptors.request.use(
   },
 )
 
-// 响应拦截器
-request.interceptors.response.use(
+// 响应拦截器:成功时透传响应体,失败时统一提示并 reject
+instance.interceptors.response.use(
   (response) => {
     const res = response.data
     if (res.success === false) {
@@ -47,5 +62,13 @@ request.interceptors.response.use(
     return Promise.reject(error)
   },
 )
+
+// 拦截器已将响应体透传,因此方法泛型即响应体类型(通常是 Result<T>)
+const request = instance as unknown as {
+  get<T = Result>(url: string, config?: AxiosRequestConfig): Promise<T>
+  post<T = Result>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>
+  put<T = Result>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T>
+  delete<T = Result>(url: string, config?: AxiosRequestConfig): Promise<T>
+}
 
 export default request

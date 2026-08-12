@@ -66,7 +66,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -77,7 +77,7 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-const formRef = ref(null)
+const formRef = ref<{ validate: () => Promise<boolean> } | null>(null)
 const loading = ref(false)
 
 const form = reactive({
@@ -96,6 +96,7 @@ const rules = {
 }
 
 const handleLogin = async () => {
+  if (!formRef.value) return
   const valid = await formRef.value.validate().catch(() => false)
   if (!valid) return
 
@@ -105,7 +106,7 @@ const handleLogin = async () => {
     ElMessage.success('登录成功')
 
     // 跳转到之前想访问的页面或首页
-    const redirect = route.query.redirect || '/'
+    const redirect = String(route.query.redirect || '/')
     router.push(redirect)
   } catch (error) {
     console.error('登录失败', error)
