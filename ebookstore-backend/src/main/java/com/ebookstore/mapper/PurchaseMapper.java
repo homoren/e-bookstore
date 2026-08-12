@@ -1,5 +1,6 @@
 package com.ebookstore.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ebookstore.entity.Purchase;
 import com.ebookstore.entity.PurchaseItem;
 import org.apache.ibatis.annotations.*;
@@ -8,12 +9,7 @@ import java.util.List;
 import java.math.BigDecimal;
 
 @Mapper
-public interface PurchaseMapper {
-
-    @Insert("INSERT INTO purchase (purchase_no, supplier, total_cost, status, remark) " +
-            "VALUES (#{purchaseNo}, #{supplier}, #{totalCost}, #{status}, #{remark})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(Purchase purchase);
+public interface PurchaseMapper extends BaseMapper<Purchase> {
 
     @Insert("INSERT INTO purchase_item (purchase_id, book_id, book_title, quantity, cost_price, subtotal) " +
             "VALUES (#{purchaseId}, #{bookId}, #{bookTitle}, #{quantity}, #{costPrice}, #{subtotal})")

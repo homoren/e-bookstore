@@ -1,5 +1,6 @@
 package com.ebookstore.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ebookstore.dto.BookDetailDTO;
 import com.ebookstore.dto.BookListDTO;
 import com.ebookstore.entity.Book;
@@ -8,7 +9,7 @@ import org.apache.ibatis.annotations.*;
 import java.util.List;
 
 @Mapper
-public interface BookMapper {
+public interface BookMapper extends BaseMapper<Book> {
 
     // 根据二级分类ID查询图书列表（二级目录展示）
     @Select("SELECT id, title, author, cover_image, price, stock, difficulty_level, publisher, sales_count " +
@@ -126,14 +127,6 @@ public interface BookMapper {
     long countBooks(@Param("categoryId") Integer categoryId,
                     @Param("parentId") Integer parentId,
                     @Param("keyword") String keyword);
-
-    // 新增图书（管理端）
-    @Insert("INSERT INTO book (title, author, isbn, publisher, publish_date, category_id, price, cost_price, " +
-            "stock, cover_image, description, detail_html, sample_code_url, difficulty_level, status) " +
-            "VALUES (#{title}, #{author}, #{isbn}, #{publisher}, #{publishDate}, #{categoryId}, #{price}, #{costPrice}, " +
-            "#{stock}, #{coverImage}, #{description}, #{detailHtml}, #{sampleCodeUrl}, #{difficultyLevel}, #{status})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(Book book);
 
     // 更新图书信息（管理端）
     @Update("UPDATE book SET title = #{title}, author = #{author}, isbn = #{isbn}, publisher = #{publisher}, " +

@@ -1,5 +1,6 @@
 package com.ebookstore.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ebookstore.dto.OrderDTO;
 import com.ebookstore.entity.Order;
 import com.ebookstore.entity.OrderItem;
@@ -9,17 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Mapper
-public interface OrderMapper {
-
-    // 创建订单
-    @Insert("INSERT INTO `order` (order_no, user_id, total_amount, status, " +
-            "receiver_name, receiver_phone, receiver_address, remark, " +
-            "payment_deadline, delivery_deadline) " +
-            "VALUES (#{orderNo}, #{userId}, #{totalAmount}, #{status}, " +
-            "#{receiverName}, #{receiverPhone}, #{receiverAddress}, #{remark}, " +
-            "#{paymentDeadline}, #{deliveryDeadline})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(Order order);
+public interface OrderMapper extends BaseMapper<Order> {
 
     // 插入订单明细
     @Insert("INSERT INTO order_item (order_id, book_id, book_title, book_author, " +

@@ -1,5 +1,6 @@
 package com.ebookstore.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ebookstore.entity.Category;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -8,7 +9,7 @@ import org.apache.ibatis.annotations.Select;
 import java.util.List;
 
 @Mapper
-public interface CategoryMapper {
+public interface CategoryMapper extends BaseMapper<Category> {
 
     // 一级分类
     @Select("SELECT * FROM category WHERE parent_id = 0 ORDER BY sort_order")

@@ -1,5 +1,6 @@
 package com.ebookstore.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ebookstore.dto.DailySettlementDTO;
 import com.ebookstore.entity.DailySettlement;
 import org.apache.ibatis.annotations.*;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.math.BigDecimal;
 
 @Mapper
-public interface SettlementMapper {
+public interface SettlementMapper extends BaseMapper<DailySettlement> {
 
     // 计算某天的销售数据
     @Select("SELECT " +

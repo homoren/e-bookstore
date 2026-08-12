@@ -21,10 +21,14 @@ jwt:
   # 有效期(毫秒),默认 7 天
   expiration: 604800000
 
-mybatis:
+mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
   type-aliases-package: com.ebookstore.entity
+  global-config:
+    db-config:
+      # 主键自增
+      id-type: auto
 
 logging:
   level:

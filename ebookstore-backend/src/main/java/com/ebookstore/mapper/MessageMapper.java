@@ -1,17 +1,13 @@
 package com.ebookstore.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ebookstore.entity.Message;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
 @Mapper
-public interface MessageMapper {
-
-    @Insert("INSERT INTO message (user_id, username, content, status) " +
-            "VALUES (#{userId}, #{username}, #{content}, 1)")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(Message message);
+public interface MessageMapper extends BaseMapper<Message> {
 
     @Update("UPDATE message SET reply = #{reply}, replied_at = NOW() WHERE id = #{id}")
     int reply(@Param("id") Long id, @Param("reply") String reply);

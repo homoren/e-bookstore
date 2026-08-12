@@ -1,11 +1,12 @@
 package com.ebookstore.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ebookstore.dto.UserInfoDTO;
 import com.ebookstore.entity.User;
 import org.apache.ibatis.annotations.*;
 
 @Mapper
-public interface UserMapper {
+public interface UserMapper extends BaseMapper<User> {
 
     // 根据用户名查询用户
     @Select("SELECT * FROM user WHERE username = #{username}")
@@ -14,12 +15,6 @@ public interface UserMapper {
     // 根据ID查询用户
     @Select("SELECT * FROM user WHERE id = #{id}")
     User findById(@Param("id") Long id);
-
-    // 插入新用户
-    @Insert("INSERT INTO user (username, password, real_name, email, phone, address, role, status) " +
-            "VALUES (#{username}, #{password}, #{realName}, #{email}, #{phone}, #{address}, 1, 1)")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(User user);
 
     // 检查用户名是否存在
     @Select("SELECT COUNT(*) FROM user WHERE username = #{username}")

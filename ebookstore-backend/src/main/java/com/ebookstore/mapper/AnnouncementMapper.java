@@ -1,17 +1,13 @@
 package com.ebookstore.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ebookstore.entity.Announcement;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
 @Mapper
-public interface AnnouncementMapper {
-
-    @Insert("INSERT INTO announcement (title, content, is_top, status) " +
-            "VALUES (#{title}, #{content}, #{isTop}, #{status})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(Announcement announcement);
+public interface AnnouncementMapper extends BaseMapper<Announcement> {
 
     @Update("UPDATE announcement SET title = #{title}, content = #{content}, " +
             "is_top = #{isTop}, status = #{status} WHERE id = #{id}")

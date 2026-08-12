@@ -1,5 +1,6 @@
 package com.ebookstore.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ebookstore.dto.CartItemDTO;
 import com.ebookstore.entity.Cart;
 import org.apache.ibatis.annotations.*;
@@ -7,7 +8,7 @@ import org.apache.ibatis.annotations.*;
 import java.util.List;
 
 @Mapper
-public interface CartMapper {
+public interface CartMapper extends BaseMapper<Cart> {
 
     // 查询用户购物车
     @Select("SELECT c.id, c.book_id, c.quantity, b.title as book_title, b.author as book_author, " +
