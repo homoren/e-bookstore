@@ -151,6 +151,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getLevel1Categories, getLevel2Categories, getBookList } from '@/api/book'
+import { createBook, updateBook, toggleBookStatus } from '@/api/admin'
 
 const loading = ref(false)
 const saving = ref(false)
@@ -267,8 +268,9 @@ const toggleStatus = async (row) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
+    await toggleBookStatus(row.id)
     ElMessage.success(`${action}成功`)
-    row.status = row.status === 1 ? 0 : 1
+    loadBooks()
   } catch (error) {
     if (error !== 'cancel') console.error(error)
   }
@@ -277,6 +279,11 @@ const toggleStatus = async (row) => {
 const saveBook = async () => {
   saving.value = true
   try {
+    if (editingBook.value) {
+      await updateBook(editingBook.value.id, bookForm.value)
+    } else {
+      await createBook(bookForm.value)
+    }
     ElMessage.success(editingBook.value ? '图书信息已更新' : '图书已添加')
     showEditDialog.value = false
     bookForm.value = createEmptyForm()

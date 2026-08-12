@@ -1,277 +1,170 @@
 package com.ebookstore.controller;
 
+import com.ebookstore.common.Result;
 import com.ebookstore.dto.*;
+import com.ebookstore.entity.Book;
 import com.ebookstore.service.AdminService;
 import com.ebookstore.service.OrderService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin(origins = "*", maxAge = 3600)
+@RequiredArgsConstructor
 public class AdminController {
 
-    @Autowired
-    private AdminService adminService;
+    private final AdminService adminService;
+    private final OrderService orderService;
 
-    @Autowired
-    private OrderService orderService;
-
-    // 验证店主权限
-    private boolean checkAdminRole(HttpServletRequest request) {
-        Integer role = (Integer) request.getAttribute("role");
-        return role != null && role == 2;
+    // ========== 图书管理 ==========
+    @PostMapping("/book/create")
+    public Result<Book> createBook(@RequestBody Book book) {
+        return Result.ok("新增成功", adminService.createBook(book));
     }
 
-    private ResponseEntity<?> requireAdmin(HttpServletRequest request) {
-        if (!checkAdminRole(request)) {
-            return ResponseEntity.status(403).body(Map.of("message", "需要店主权限"));
-        }
-        return null;
+    @PutMapping("/book/update/{id}")
+    public Result<Void> updateBook(@PathVariable Long id, @RequestBody Book book) {
+        book.setId(id);
+        adminService.updateBook(book);
+        return Result.ok("更新成功");
+    }
+
+    @PutMapping("/book/status/{id}")
+    public Result<Void> toggleBookStatus(@PathVariable Long id) {
+        adminService.toggleBookStatus(id);
+        return Result.ok("状态已更新");
     }
 
     // ========== 进货管理 ==========
     @PostMapping("/purchase/create")
-    public ResponseEntity<?> createPurchase(@Valid @RequestBody CreatePurchaseRequest request,
-                                            HttpServletRequest httpRequest) {
-        ResponseEntity<?> authCheck = requireAdmin(httpRequest);
-        if (authCheck != null) return authCheck;
-
-        try {
-            PurchaseDTO purchase = adminService.createPurchase(request);
-            return ResponseEntity.ok(Map.of("success", true, "message", "进货成功", "data", purchase));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
+    public Result<PurchaseDTO> createPurchase(@Valid @RequestBody CreatePurchaseRequest request) {
+        return Result.ok("进货成功", adminService.createPurchase(request));
     }
 
     @GetMapping("/purchase/list")
-    public ResponseEntity<?> getPurchaseList(HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        List<PurchaseDTO> purchases = adminService.getPurchaseList();
-        return ResponseEntity.ok(Map.of("success", true, "data", purchases));
+    public Result<List<PurchaseDTO>> getPurchaseList() {
+        return Result.ok(adminService.getPurchaseList());
     }
 
     @GetMapping("/purchase/detail/{id}")
-    public ResponseEntity<?> getPurchaseDetail(@PathVariable Long id, HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        try {
-            PurchaseDTO purchase = adminService.getPurchaseDetail(id);
-            return ResponseEntity.ok(Map.of("success", true, "data", purchase));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
+    public Result<PurchaseDTO> getPurchaseDetail(@PathVariable Long id) {
+        return Result.ok(adminService.getPurchaseDetail(id));
     }
 
     // ========== 订单管理（店主操作）==========
     @PutMapping("/order/confirm-payment/{id}")
-    public ResponseEntity<?> confirmPayment(@PathVariable Long id, HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        try {
-            orderService.confirmPayment(id);
-            return ResponseEntity.ok(Map.of("success", true, "message", "已确认收款"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
+    public Result<Void> confirmPayment(@PathVariable Long id) {
+        orderService.confirmPayment(id);
+        return Result.ok("已确认收款");
     }
 
     @PutMapping("/order/confirm-delivery/{id}")
-    public ResponseEntity<?> confirmDelivery(@PathVariable Long id, HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        try {
-            orderService.confirmDelivery(id);
-            return ResponseEntity.ok(Map.of("success", true, "message", "已确认配送"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
+    public Result<Void> confirmDelivery(@PathVariable Long id) {
+        orderService.confirmDelivery(id);
+        return Result.ok("已确认配送");
     }
 
     @PutMapping("/order/complete/{id}")
-    public ResponseEntity<?> completeOrder(@PathVariable Long id,
-                                           @RequestParam(required = false) String receiptSignature,
-                                           HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        try {
-            orderService.completeOrder(id, receiptSignature);
-            return ResponseEntity.ok(Map.of("success", true, "message", "订单已完成"));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
+    public Result<Void> completeOrder(@PathVariable Long id,
+                                      @RequestParam(required = false) String receiptSignature) {
+        orderService.completeOrder(id, receiptSignature);
+        return Result.ok("订单已完成");
     }
 
     @GetMapping("/order/list")
-    public ResponseEntity<?> getAllOrders(HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
+    public Result<List<OrderDTO>> getAllOrders() {
+        return Result.ok(adminService.getAllOrders());
+    }
 
-        List<OrderDTO> orders = adminService.getAllOrders();
-        return ResponseEntity.ok(Map.of("success", true, "data", orders));
+    @GetMapping("/order/list-by-status/{status}")
+    public Result<List<OrderDTO>> getOrdersByStatus(@PathVariable Integer status) {
+        return Result.ok(adminService.getOrdersByStatus(status));
     }
 
     // ========== 公告管理 ==========
     @PostMapping("/announcement/create")
-    public ResponseEntity<?> createAnnouncement(@Valid @RequestBody CreateAnnouncementRequest request,
-                                                HttpServletRequest httpRequest) {
-        ResponseEntity<?> authCheck = requireAdmin(httpRequest);
-        if (authCheck != null) return authCheck;
-
-        AnnouncementDTO announcement = adminService.createAnnouncement(request);
-        return ResponseEntity.ok(Map.of("success", true, "message", "公告发布成功", "data", announcement));
+    public Result<AnnouncementDTO> createAnnouncement(@Valid @RequestBody CreateAnnouncementRequest request) {
+        return Result.ok("公告发布成功", adminService.createAnnouncement(request));
     }
 
     @PutMapping("/announcement/update/{id}")
-    public ResponseEntity<?> updateAnnouncement(@PathVariable Long id,
-                                                @Valid @RequestBody CreateAnnouncementRequest request,
-                                                HttpServletRequest httpRequest) {
-        ResponseEntity<?> authCheck = requireAdmin(httpRequest);
-        if (authCheck != null) return authCheck;
-
-        try {
-            AnnouncementDTO announcement = adminService.updateAnnouncement(id, request);
-            return ResponseEntity.ok(Map.of("success", true, "message", "公告更新成功", "data", announcement));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
+    public Result<AnnouncementDTO> updateAnnouncement(@PathVariable Long id,
+                                                      @Valid @RequestBody CreateAnnouncementRequest request) {
+        return Result.ok("公告更新成功", adminService.updateAnnouncement(id, request));
     }
 
     @DeleteMapping("/announcement/delete/{id}")
-    public ResponseEntity<?> deleteAnnouncement(@PathVariable Long id, HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
+    public Result<Void> deleteAnnouncement(@PathVariable Long id) {
         adminService.deleteAnnouncement(id);
-        return ResponseEntity.ok(Map.of("success", true, "message", "公告已删除"));
+        return Result.ok("公告已删除");
     }
 
     @GetMapping("/announcement/list")
-    public ResponseEntity<?> getAllAnnouncements(HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        List<AnnouncementDTO> announcements = adminService.getAllAnnouncements();
-        return ResponseEntity.ok(Map.of("success", true, "data", announcements));
+    public Result<List<AnnouncementDTO>> getAllAnnouncements() {
+        return Result.ok(adminService.getAllAnnouncements());
     }
 
     // ========== 留言管理 ==========
     @PutMapping("/message/reply/{id}")
-    public ResponseEntity<?> replyMessage(@PathVariable Long id,
-                                          @Valid @RequestBody ReplyMessageRequest request,
-                                          HttpServletRequest httpRequest) {
-        ResponseEntity<?> authCheck = requireAdmin(httpRequest);
-        if (authCheck != null) return authCheck;
-
-        try {
-            MessageDTO message = adminService.replyMessage(id, request);
-            return ResponseEntity.ok(Map.of("success", true, "message", "回复成功", "data", message));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
+    public Result<MessageDTO> replyMessage(@PathVariable Long id,
+                                           @Valid @RequestBody ReplyMessageRequest request) {
+        return Result.ok("回复成功", adminService.replyMessage(id, request));
     }
 
     @DeleteMapping("/message/delete/{id}")
-    public ResponseEntity<?> deleteMessage(@PathVariable Long id, HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
+    public Result<Void> deleteMessage(@PathVariable Long id) {
         adminService.deleteMessage(id);
-        return ResponseEntity.ok(Map.of("success", true, "message", "留言已删除"));
+        return Result.ok("留言已删除");
     }
 
     @PutMapping("/message/toggle/{id}")
-    public ResponseEntity<?> toggleMessageStatus(@PathVariable Long id,
-                                                 @RequestParam Integer status,
-                                                 HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
+    public Result<Void> toggleMessageStatus(@PathVariable Long id, @RequestParam Integer status) {
         adminService.toggleMessageStatus(id, status);
-        return ResponseEntity.ok(Map.of("success", true, "message", "状态已更新"));
+        return Result.ok("状态已更新");
     }
 
     @GetMapping("/message/list")
-    public ResponseEntity<?> getAllMessages(HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        List<MessageDTO> messages = adminService.getAllMessages();
-        return ResponseEntity.ok(Map.of("success", true, "data", messages));
+    public Result<List<MessageDTO>> getAllMessages() {
+        return Result.ok(adminService.getAllMessages());
     }
 
     // ========== 日结帐管理 ==========
     @PostMapping("/settlement/generate")
-    public ResponseEntity<?> generateSettlement(@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
-                                                HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        DailySettlementDTO settlement = adminService.generateDailySettlement(date);
-        return ResponseEntity.ok(Map.of("success", true, "message", "日结生成成功", "data", settlement));
+    public Result<DailySettlementDTO> generateSettlement(
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+        return Result.ok("日结生成成功", adminService.generateDailySettlement(date));
     }
 
     @GetMapping("/settlement/list")
-    public ResponseEntity<?> getSettlementList(HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        List<DailySettlementDTO> settlements = adminService.getSettlementList();
-        return ResponseEntity.ok(Map.of("success", true, "data", settlements));
+    public Result<List<DailySettlementDTO>> getSettlementList() {
+        return Result.ok(adminService.getSettlementList());
     }
 
     @GetMapping("/settlement/today")
-    public ResponseEntity<?> getTodaySettlement(HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        DailySettlementDTO settlement = adminService.getTodaySettlement();
-        return ResponseEntity.ok(Map.of("success", true, "data", settlement));
+    public Result<DailySettlementDTO> getTodaySettlement() {
+        return Result.ok(adminService.getTodaySettlement());
     }
 
     @GetMapping("/settlement/range")
-    public ResponseEntity<?> getSettlementByRange(@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
-                                                  @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
-                                                  HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        List<DailySettlementDTO> settlements = adminService.getSettlementByDateRange(startDate, endDate);
-        return ResponseEntity.ok(Map.of("success", true, "data", settlements));
+    public Result<List<DailySettlementDTO>> getSettlementByRange(
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+        return Result.ok(adminService.getSettlementByDateRange(startDate, endDate));
     }
 
     // ========== 客户管理 ==========
     @GetMapping("/customer/list")
-    public ResponseEntity<?> getAllCustomers(HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        List<CustomerDTO> customers = adminService.getAllCustomers();
-        return ResponseEntity.ok(Map.of("success", true, "data", customers));
+    public Result<List<CustomerDTO>> getAllCustomers() {
+        return Result.ok(adminService.getAllCustomers());
     }
 
     @GetMapping("/customer/detail/{userId}")
-    public ResponseEntity<?> getCustomerDetail(@PathVariable Long userId, HttpServletRequest request) {
-        ResponseEntity<?> authCheck = requireAdmin(request);
-        if (authCheck != null) return authCheck;
-
-        CustomerDTO customer = adminService.getCustomerDetail(userId);
-        return ResponseEntity.ok(Map.of("success", true, "data", customer));
+    public Result<CustomerDTO> getCustomerDetail(@PathVariable Long userId) {
+        return Result.ok(adminService.getCustomerDetail(userId));
     }
 }

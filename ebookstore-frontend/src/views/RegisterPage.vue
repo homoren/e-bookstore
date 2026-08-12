@@ -160,7 +160,7 @@ const checkUsername = async () => {
 
   try {
     const res = await checkUsernameApi(form.username)
-    usernameExists.value = res.exists
+    usernameExists.value = res.data
     usernameChecked.value = true
   } catch {
     usernameChecked.value = false

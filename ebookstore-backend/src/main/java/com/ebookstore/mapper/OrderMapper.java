@@ -5,6 +5,7 @@ import com.ebookstore.entity.Order;
 import com.ebookstore.entity.OrderItem;
 import org.apache.ibatis.annotations.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Mapper
@@ -43,13 +44,20 @@ public interface OrderMapper {
     @Select("SELECT * FROM order_item WHERE order_id = #{orderId}")
     List<OrderItem> findItemsByOrderId(@Param("orderId") Long orderId);
 
+    // 批量查询订单明细（消除 N+1）
+    @Select("<script>" +
+            "SELECT * FROM order_item WHERE order_id IN " +
+            "<foreach collection='orderIds' item='orderId' open='(' separator=',' close=')'>#{orderId}</foreach>" +
+            "</script>")
+    List<OrderItem> findItemsByOrderIds(@Param("orderIds") List<Long> orderIds);
+
     // 更新订单状态
     @Update("UPDATE `order` SET status = #{status} WHERE id = #{id}")
     int updateStatus(@Param("id") Long orderId, @Param("status") Integer status);
 
-    // 店主确认收款
-    @Update("UPDATE `order` SET status = 2, paid_at = NOW() WHERE id = #{id}")
-    int confirmPayment(@Param("id") Long orderId);
+    // 店主确认收款（同时设置配送截止日期）
+    @Update("UPDATE `order` SET status = 2, paid_at = NOW(), delivery_deadline = #{deadline} WHERE id = #{id}")
+    int confirmPayment(@Param("id") Long orderId, @Param("deadline") LocalDate deadline);
 
     // 店主确认配送
     @Update("UPDATE `order` SET status = 3, delivered_at = NOW() WHERE id = #{id}")

@@ -174,7 +174,8 @@ const totalAmount = computed(() => {
 })
 
 onMounted(async () => {
-  const cartIds = history.state?.cartIds || []
+  const ids = route.query.ids
+  const cartIds = ids ? String(ids).split(',').map(Number).filter(Boolean) : []
   if (!cartIds.length) {
     ElMessage.warning('请先选择商品')
     router.push('/cart')

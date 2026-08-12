@@ -1,13 +1,17 @@
 package com.ebookstore.service.impl;
 
-import com.ebookstore.dto.*;
+import com.ebookstore.common.BusinessException;
+import com.ebookstore.dto.CartItemDTO;
+import com.ebookstore.dto.CreateOrderRequest;
+import com.ebookstore.dto.OrderDTO;
+import com.ebookstore.dto.OrderItemDTO;
 import com.ebookstore.entity.Order;
 import com.ebookstore.entity.OrderItem;
 import com.ebookstore.mapper.CartMapper;
 import com.ebookstore.mapper.OrderMapper;
 import com.ebookstore.service.OrderService;
 import com.ebookstore.utils.OrderNoGenerator;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,18 +19,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
-    @Autowired
-    private OrderMapper orderMapper;
-
-    @Autowired
-    private CartMapper cartMapper;
-
-    @Autowired
-    private OrderNoGenerator orderNoGenerator;
+    private final OrderMapper orderMapper;
+    private final CartMapper cartMapper;
+    private final OrderNoGenerator orderNoGenerator;
 
     @Override
     @Transactional
@@ -34,7 +36,7 @@ public class OrderServiceImpl implements OrderService {
         // 1. 获取购物车选中项
         List<CartItemDTO> cartItems = cartMapper.findByIds(userId, request.getCartItemIds());
         if (cartItems.isEmpty()) {
-            throw new RuntimeException("购物车中没有选中的商品");
+            throw new BusinessException("购物车中没有选中的商品");
         }
 
         // 2. 检查库存并计算总金额
@@ -43,7 +45,7 @@ public class OrderServiceImpl implements OrderService {
 
         for (CartItemDTO item : cartItems) {
             if (item.getQuantity() > item.getStock()) {
-                throw new RuntimeException("商品《" + item.getBookTitle() + "》库存不足");
+                throw new BusinessException("商品《" + item.getBookTitle() + "》库存不足");
             }
 
             BigDecimal subtotal = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
@@ -81,7 +83,7 @@ public class OrderServiceImpl implements OrderService {
             // 扣减库存
             int result = orderMapper.reduceStock(item.getBookId(), item.getQuantity());
             if (result == 0) {
-                throw new RuntimeException("扣减库存失败");
+                throw new BusinessException("扣减库存失败");
             }
         }
 
@@ -96,7 +98,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderDTO getOrderDetail(Long orderId) {
         Order order = orderMapper.findById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new BusinessException("订单不存在");
         }
         List<OrderItem> items = orderMapper.findItemsByOrderId(orderId);
         return buildOrderDTO(order, items);
@@ -105,12 +107,16 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<OrderDTO> getUserOrders(Long userId) {
         List<Order> orders = orderMapper.findByUserId(userId);
-        List<OrderDTO> result = new ArrayList<>();
-        for (Order order : orders) {
-            List<OrderItem> items = orderMapper.findItemsByOrderId(order.getId());
-            result.add(buildOrderDTO(order, items));
+        if (orders.isEmpty()) {
+            return List.of();
         }
-        return result;
+        List<Long> orderIds = orders.stream().map(Order::getId).toList();
+        Map<Long, List<OrderItem>> itemsByOrder = orderMapper.findItemsByOrderIds(orderIds)
+                .stream()
+                .collect(Collectors.groupingBy(OrderItem::getOrderId));
+        return orders.stream()
+                .map(o -> buildOrderDTO(o, itemsByOrder.getOrDefault(o.getId(), List.of())))
+                .toList();
     }
 
     @Override
@@ -118,19 +124,14 @@ public class OrderServiceImpl implements OrderService {
     public void confirmPayment(Long orderId) {
         Order order = orderMapper.findById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new BusinessException("订单不存在");
         }
         if (order.getStatus() != 1) {
-            throw new RuntimeException("订单状态不正确，当前状态：" + getStatusText(order.getStatus()));
+            throw new BusinessException("订单状态不正确，当前状态：" + getStatusText(order.getStatus()));
         }
 
-        orderMapper.confirmPayment(orderId);
-
-        // 设置配送截止日期（收款后10日内）
-        Order updatedOrder = new Order();
-        updatedOrder.setId(orderId);
-        updatedOrder.setDeliveryDeadline(LocalDate.now().plusDays(10));
-        // 这里可以添加一个更新配送截止日期的SQL
+        // 确认收款，并设置配送截止日期（收款后10日内）
+        orderMapper.confirmPayment(orderId, LocalDate.now().plusDays(10));
     }
 
     @Override
@@ -138,10 +139,10 @@ public class OrderServiceImpl implements OrderService {
     public void confirmDelivery(Long orderId) {
         Order order = orderMapper.findById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new BusinessException("订单不存在");
         }
         if (order.getStatus() != 2) {
-            throw new RuntimeException("订单状态不正确，当前状态：" + getStatusText(order.getStatus()));
+            throw new BusinessException("订单状态不正确，当前状态：" + getStatusText(order.getStatus()));
         }
 
         orderMapper.confirmDelivery(orderId);
@@ -152,10 +153,10 @@ public class OrderServiceImpl implements OrderService {
     public void completeOrder(Long orderId, String receiptSignature) {
         Order order = orderMapper.findById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new BusinessException("订单不存在");
         }
         if (order.getStatus() != 3) {
-            throw new RuntimeException("订单状态不正确，当前状态：" + getStatusText(order.getStatus()));
+            throw new BusinessException("订单状态不正确，当前状态：" + getStatusText(order.getStatus()));
         }
 
         orderMapper.completeOrder(orderId, receiptSignature);
@@ -163,13 +164,16 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public void cancelOrder(Long orderId) {
+    public void cancelOrder(Long userId, Long orderId) {
         Order order = orderMapper.findById(orderId);
         if (order == null) {
-            throw new RuntimeException("订单不存在");
+            throw new BusinessException("订单不存在");
+        }
+        if (!order.getUserId().equals(userId)) {
+            throw new BusinessException("无权操作此订单");
         }
         if (order.getStatus() != 0 && order.getStatus() != 1) {
-            throw new RuntimeException("当前状态无法取消订单");
+            throw new BusinessException("当前状态无法取消订单");
         }
 
         // 恢复库存

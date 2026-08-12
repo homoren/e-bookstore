@@ -4,16 +4,16 @@ import com.ebookstore.dto.BookDetailDTO;
 import com.ebookstore.dto.BookListDTO;
 import com.ebookstore.mapper.BookMapper;
 import com.ebookstore.service.BookService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class BookServiceImpl implements BookService {
 
-    @Autowired
-    private BookMapper bookMapper;
+    private final BookMapper bookMapper;
 
     @Override
     public List<BookListDTO> getBooksByCategory(Integer categoryId) {

@@ -10,8 +10,7 @@ export const getLevel2Categories = (parentId) => {
   return request.get('/books/categories/level2', { params: { parentId } })
 }
 
-// 获取图书列表（支持 二级分类ID 或 一级分类ID）
-// 获取图书列表（修复版：支持分类 + 关键词）
+// 获取图书列表（支持 二级分类ID 或 一级分类ID，可带关键词）
 export const getBookList = (categoryId = 0, keyword = '') => {
   const params = { categoryId }
   if (keyword) params.keyword = keyword

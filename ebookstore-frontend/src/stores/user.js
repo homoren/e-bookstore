@@ -32,7 +32,7 @@ export const useUserStore = defineStore('user', () => {
       const res = await getUserInfo()
       userInfo.value = res.data
       localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
-    } catch (error) {
+    } catch {
       logout()
     }
   }

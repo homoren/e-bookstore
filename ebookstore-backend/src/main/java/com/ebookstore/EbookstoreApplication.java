@@ -11,3 +11,8 @@ public class EbookstoreApplication {
         SpringApplication.run(EbookstoreApplication.class, args);
     }
 }
+
+//cd
+//.\mvnw spring-boot:run
+//cd
+//npm run dev

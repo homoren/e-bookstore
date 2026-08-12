@@ -1,23 +1,22 @@
 package com.ebookstore.service.impl;
 
+import com.ebookstore.common.BusinessException;
 import com.ebookstore.dto.CartItemDTO;
 import com.ebookstore.mapper.BookMapper;
 import com.ebookstore.mapper.CartMapper;
 import com.ebookstore.service.CartService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
 
-    @Autowired
-    private CartMapper cartMapper;
-
-    @Autowired
-    private BookMapper bookMapper;
+    private final CartMapper cartMapper;
+    private final BookMapper bookMapper;
 
     @Override
     public List<CartItemDTO> getCartList(Long userId) {
@@ -30,10 +29,10 @@ public class CartServiceImpl implements CartService {
         // 检查图书是否存在且有库存
         var book = bookMapper.findBookDetailById(bookId);
         if (book == null) {
-            throw new RuntimeException("图书不存在");
+            throw new BusinessException("图书不存在");
         }
         if (book.getStock() < quantity) {
-            throw new RuntimeException("库存不足，当前库存：" + book.getStock());
+            throw new BusinessException("库存不足，当前库存：" + book.getStock());
         }
 
         cartMapper.insertOrUpdate(userId, bookId, quantity);
@@ -41,7 +40,10 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public void updateQuantity(Long userId, Long cartId, Integer quantity) {
-        cartMapper.updateQuantity(cartId, userId, quantity);
+        int result = cartMapper.updateQuantity(cartId, userId, quantity);
+        if (result == 0) {
+            throw new BusinessException("购物车商品不存在");
+        }
     }
 
     @Override

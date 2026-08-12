@@ -57,7 +57,7 @@
           <div v-loading="loading" class="books-wrapper">
             <div v-if="bookList.length" class="book-grid-list">
               <div
-                v-for="book in bookList"
+                v-for="book in pagedBooks"
                 :key="book.id"
                 class="book-item"
                 @click="goToDetail(book.id)"
@@ -234,10 +234,11 @@ const sortBooks = (books) => {
   }
 }
 
-const paginate = (books) => {
+// 当前页展示的图书（前端分页）
+const pagedBooks = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
-  return books.slice(start, start + pageSize.value)
-}
+  return bookList.value.slice(start, start + pageSize.value)
+})
 
 const handleCategorySelect = async (index) => {
   const catId = parseInt(index.replace('cat-', ''))
@@ -276,7 +277,6 @@ const changeSort = (type) => {
 
 const handlePageChange = (page) => {
   currentPage.value = page
-  loadBooks()
 }
 
 const goToDetail = (id) => {

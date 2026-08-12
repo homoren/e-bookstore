@@ -153,11 +153,7 @@ const handleSelectionChange = (selection) => {
 }
 
 const handleSelectAll = (val) => {
-  if (val) {
-    selectedItems.value = [...cartList.value]
-  } else {
-    selectedItems.value = []
-  }
+  tableRef.value.toggleAllSelection(val)
 }
 
 const handleQuantityChange = async (row) => {
@@ -233,11 +229,8 @@ const handleClearCart = async () => {
 }
 
 const handleCheckout = () => {
-  const selectedCartItems = selectedItems.value.map(item => item.id)
-  router.push({
-    name: 'checkout',
-    state: { cartIds: selectedCartItems }
-  })
+  const ids = selectedItems.value.map(item => item.id)
+  router.push({ name: 'checkout', query: { ids: ids.join(',') } })
 }
 
 const goShopping = () => {

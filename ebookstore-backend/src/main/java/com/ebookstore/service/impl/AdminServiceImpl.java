@@ -1,11 +1,12 @@
 package com.ebookstore.service.impl;
 
+import com.ebookstore.common.BusinessException;
 import com.ebookstore.dto.*;
 import com.ebookstore.entity.*;
 import com.ebookstore.mapper.*;
 import com.ebookstore.service.AdminService;
 import com.ebookstore.utils.PurchaseNoGenerator;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,33 +14,21 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
 
-    @Autowired
-    private PurchaseMapper purchaseMapper;
-
-    @Autowired
-    private BookMapper bookMapper;
-
-    @Autowired
-    private AnnouncementMapper announcementMapper;
-
-    @Autowired
-    private MessageMapper messageMapper;
-
-    @Autowired
-    private SettlementMapper settlementMapper;
-
-    @Autowired
-    private CustomerMapper customerMapper;
-
-    @Autowired
-    private OrderMapper orderMapper;
-
-    @Autowired
-    private PurchaseNoGenerator purchaseNoGenerator;
+    private final PurchaseMapper purchaseMapper;
+    private final BookMapper bookMapper;
+    private final AnnouncementMapper announcementMapper;
+    private final MessageMapper messageMapper;
+    private final SettlementMapper settlementMapper;
+    private final CustomerMapper customerMapper;
+    private final OrderMapper orderMapper;
+    private final PurchaseNoGenerator purchaseNoGenerator;
 
     // ========== 进货管理 ==========
     @Override
@@ -51,7 +40,7 @@ public class AdminServiceImpl implements AdminService {
         for (var itemReq : request.getItems()) {
             var book = bookMapper.findBookDetailById(itemReq.getBookId());
             if (book == null) {
-                throw new RuntimeException("图书ID " + itemReq.getBookId() + " 不存在");
+                throw new BusinessException("图书ID " + itemReq.getBookId() + " 不存在");
             }
 
             BigDecimal subtotal = itemReq.getCostPrice()
@@ -90,19 +79,23 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public List<PurchaseDTO> getPurchaseList() {
         List<Purchase> purchases = purchaseMapper.findAll();
-        List<PurchaseDTO> result = new ArrayList<>();
-        for (Purchase purchase : purchases) {
-            List<PurchaseItem> items = purchaseMapper.findItemsByPurchaseId(purchase.getId());
-            result.add(buildPurchaseDTO(purchase, items));
+        if (purchases.isEmpty()) {
+            return List.of();
         }
-        return result;
+        List<Long> purchaseIds = purchases.stream().map(Purchase::getId).toList();
+        Map<Long, List<PurchaseItem>> itemsByPurchase = purchaseMapper.findItemsByPurchaseIds(purchaseIds)
+                .stream()
+                .collect(Collectors.groupingBy(PurchaseItem::getPurchaseId));
+        return purchases.stream()
+                .map(p -> buildPurchaseDTO(p, itemsByPurchase.getOrDefault(p.getId(), List.of())))
+                .toList();
     }
 
     @Override
     public PurchaseDTO getPurchaseDetail(Long purchaseId) {
         Purchase purchase = purchaseMapper.findById(purchaseId);
         if (purchase == null) {
-            throw new RuntimeException("进货单不存在");
+            throw new BusinessException("进货单不存在");
         }
         List<PurchaseItem> items = purchaseMapper.findItemsByPurchaseId(purchaseId);
         return buildPurchaseDTO(purchase, items);
@@ -111,13 +104,40 @@ public class AdminServiceImpl implements AdminService {
     // ========== 库存管理 ==========
     @Override
     public void updateBookStock(Long bookId, Integer stock) {
-        // 直接更新库存
-        // 这里可以添加一个专门的更新库存的方法
+        bookMapper.updateStock(bookId, stock);
     }
 
     @Override
     public void updateBookStatus(Long bookId, Integer status) {
-        // 更新图书上下架状态
+        bookMapper.updateStatus(bookId, status);
+    }
+
+    // ========== 图书管理 ==========
+    @Override
+    public Book createBook(Book book) {
+        book.setId(null);
+        book.setStatus(1);  // 新增默认上架
+        bookMapper.insert(book);
+        return book;
+    }
+
+    @Override
+    public void updateBook(Book book) {
+        Book exist = bookMapper.findById(book.getId());
+        if (exist == null) {
+            throw new BusinessException("图书不存在");
+        }
+        bookMapper.update(book);
+    }
+
+    @Override
+    public void toggleBookStatus(Long bookId) {
+        Book exist = bookMapper.findById(bookId);
+        if (exist == null) {
+            throw new BusinessException("图书不存在");
+        }
+        int newStatus = (exist.getStatus() != null && exist.getStatus() == 1) ? 0 : 1;
+        bookMapper.updateStatus(bookId, newStatus);
     }
 
     // ========== 公告管理 ==========
@@ -136,7 +156,7 @@ public class AdminServiceImpl implements AdminService {
     public AnnouncementDTO updateAnnouncement(Long id, CreateAnnouncementRequest request) {
         Announcement announcement = announcementMapper.findById(id);
         if (announcement == null) {
-            throw new RuntimeException("公告不存在");
+            throw new BusinessException("公告不存在");
         }
         announcement.setTitle(request.getTitle());
         announcement.setContent(request.getContent());
@@ -166,7 +186,7 @@ public class AdminServiceImpl implements AdminService {
     public AnnouncementDTO getAnnouncementDetail(Long id) {
         Announcement announcement = announcementMapper.findById(id);
         if (announcement == null) {
-            throw new RuntimeException("公告不存在");
+            throw new BusinessException("公告不存在");
         }
         announcementMapper.incrementViewCount(id);
         return buildAnnouncementDTO(announcement);
@@ -187,7 +207,7 @@ public class AdminServiceImpl implements AdminService {
     public MessageDTO replyMessage(Long id, ReplyMessageRequest request) {
         Message message = messageMapper.findById(id);
         if (message == null) {
-            throw new RuntimeException("留言不存在");
+            throw new BusinessException("留言不存在");
         }
         messageMapper.reply(id, request.getReply());
         message.setReply(request.getReply());
@@ -272,19 +292,32 @@ public class AdminServiceImpl implements AdminService {
     // ========== 订单管理（店主视角）==========
     @Override
     public List<OrderDTO> getAllOrders() {
-        List<Order> orders = orderMapper.findAll();  // 需要添加 findAll 方法
-        List<OrderDTO> result = new ArrayList<>();
-        for (Order order : orders) {
-            List<OrderItem> items = orderMapper.findItemsByOrderId(order.getId());
-            result.add(buildOrderDTO(order, items));
+        List<Order> orders = orderMapper.findAll();
+        if (orders.isEmpty()) {
+            return List.of();
         }
-        return result;
+        List<Long> orderIds = orders.stream().map(Order::getId).toList();
+        Map<Long, List<OrderItem>> itemsByOrder = orderMapper.findItemsByOrderIds(orderIds)
+                .stream()
+                .collect(Collectors.groupingBy(OrderItem::getOrderId));
+        return orders.stream()
+                .map(o -> buildOrderDTO(o, itemsByOrder.getOrDefault(o.getId(), List.of())))
+                .toList();
     }
 
     @Override
     public List<OrderDTO> getOrdersByStatus(Integer status) {
-        // 需要添加按状态查询的方法
-        return null;
+        List<Order> orders = orderMapper.findByStatus(status);
+        if (orders.isEmpty()) {
+            return List.of();
+        }
+        List<Long> orderIds = orders.stream().map(Order::getId).toList();
+        Map<Long, List<OrderItem>> itemsByOrder = orderMapper.findItemsByOrderIds(orderIds)
+                .stream()
+                .collect(Collectors.groupingBy(OrderItem::getOrderId));
+        return orders.stream()
+                .map(o -> buildOrderDTO(o, itemsByOrder.getOrDefault(o.getId(), List.of())))
+                .toList();
     }
 
     // ========== 辅助方法 ==========

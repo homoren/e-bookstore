@@ -28,6 +28,13 @@ public interface PurchaseMapper {
     @Select("SELECT * FROM purchase_item WHERE purchase_id = #{purchaseId}")
     List<PurchaseItem> findItemsByPurchaseId(@Param("purchaseId") Long purchaseId);
 
+    // 批量查询进货单明细（消除 N+1）
+    @Select("<script>" +
+            "SELECT * FROM purchase_item WHERE purchase_id IN " +
+            "<foreach collection='purchaseIds' item='purchaseId' open='(' separator=',' close=')'>#{purchaseId}</foreach>" +
+            "</script>")
+    List<PurchaseItem> findItemsByPurchaseIds(@Param("purchaseIds") List<Long> purchaseIds);
+
     @Update("UPDATE book SET stock = stock + #{quantity}, cost_price = #{costPrice} " +
             "WHERE id = #{bookId}")
     int increaseStock(@Param("bookId") Long bookId, @Param("quantity") Integer quantity,

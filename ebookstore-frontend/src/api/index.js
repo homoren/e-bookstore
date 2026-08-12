@@ -2,6 +2,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
 const request = axios.create({
+  // 走 Vite 代理,避免跨域;生产环境可改为后端地址
   baseURL: '/api',
   timeout: 10000,
   headers: {

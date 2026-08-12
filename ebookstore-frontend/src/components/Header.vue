@@ -93,7 +93,7 @@ const keyword = ref('')
 onMounted(async () => {
   try {
     const res = await getLevel1Categories()
-    categories.value = res
+    categories.value = res.data || []
   } catch (error) {
     console.error('获取分类失败', error)
   }

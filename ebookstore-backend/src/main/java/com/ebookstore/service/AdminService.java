@@ -1,6 +1,7 @@
 package com.ebookstore.service;
 
 import com.ebookstore.dto.*;
+import com.ebookstore.entity.Book;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -14,6 +15,11 @@ public interface AdminService {
     // ========== 库存管理 ==========
     void updateBookStock(Long bookId, Integer stock);
     void updateBookStatus(Long bookId, Integer status);
+
+    // ========== 图书管理 ==========
+    Book createBook(Book book);
+    void updateBook(Book book);
+    void toggleBookStatus(Long bookId);
 
     // ========== 公告管理 ==========
     AnnouncementDTO createAnnouncement(CreateAnnouncementRequest request);

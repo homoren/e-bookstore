@@ -11,7 +11,7 @@ import java.util.List;
 public interface BookMapper {
 
     // 根据二级分类ID查询图书列表（二级目录展示）
-    @Select("SELECT id, title, author, cover_image, price, stock, difficulty_level, publisher " +
+    @Select("SELECT id, title, author, cover_image, price, stock, difficulty_level, publisher, sales_count " +
             "FROM book WHERE category_id = #{categoryId} AND status = 1 ORDER BY sales_count DESC")
     @Results(id = "bookListMap", value = {
             @Result(property = "id", column = "id"),
@@ -50,8 +50,12 @@ public interface BookMapper {
     })
     BookDetailDTO findBookDetailById(@Param("id") Long id);
 
+    // 查询图书（不过滤上下架状态，供管理端使用）
+    @Select("SELECT * FROM book WHERE id = #{id}")
+    Book findById(@Param("id") Long id);
+
     // 根据一级分类ID获取所有图书（可选，用于"全部"浏览）
-    @Select("SELECT id, title, author, cover_image, price, stock, difficulty_level, publisher " +
+    @Select("SELECT id, title, author, cover_image, price, stock, difficulty_level, publisher, sales_count " +
             "FROM book WHERE category_id IN (SELECT id FROM category WHERE parent_id = #{parentId}) " +
             "AND status = 1 ORDER BY sales_count DESC")
     List<BookListDTO> findBooksByParentCategoryId(@Param("parentId") Integer parentId);
@@ -67,7 +71,7 @@ public interface BookMapper {
     // 支持关键词模糊搜索
     @Select({
             "<script>",
-            "SELECT id, title, author, cover_image, price, stock, difficulty_level, publisher ",
+            "SELECT id, title, author, cover_image, price, stock, difficulty_level, publisher, sales_count ",
             "FROM book ",
             "WHERE status = 1 ",
             "<if test='categoryId != null and categoryId != 0'>",
@@ -83,4 +87,19 @@ public interface BookMapper {
             @Param("categoryId") Integer categoryId,
             @Param("keyword") String keyword
     );
+
+    // 新增图书（管理端）
+    @Insert("INSERT INTO book (title, author, isbn, publisher, publish_date, category_id, price, cost_price, " +
+            "stock, cover_image, description, detail_html, sample_code_url, difficulty_level, status) " +
+            "VALUES (#{title}, #{author}, #{isbn}, #{publisher}, #{publishDate}, #{categoryId}, #{price}, #{costPrice}, " +
+            "#{stock}, #{coverImage}, #{description}, #{detailHtml}, #{sampleCodeUrl}, #{difficultyLevel}, #{status})")
+    @Options(useGeneratedKeys = true, keyProperty = "id")
+    int insert(Book book);
+
+    // 更新图书信息（管理端）
+    @Update("UPDATE book SET title = #{title}, author = #{author}, isbn = #{isbn}, publisher = #{publisher}, " +
+            "publish_date = #{publishDate}, category_id = #{categoryId}, price = #{price}, cost_price = #{costPrice}, " +
+            "stock = #{stock}, cover_image = #{coverImage}, description = #{description}, detail_html = #{detailHtml}, " +
+            "sample_code_url = #{sampleCodeUrl}, difficulty_level = #{difficultyLevel} WHERE id = #{id}")
+    int update(Book book);
 }

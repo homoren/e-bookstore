@@ -1,5 +1,17 @@
 import request from './index'
 
+export const createBook = (data) => {
+  return request.post('/admin/book/create', data)
+}
+
+export const updateBook = (id, data) => {
+  return request.put(`/admin/book/update/${id}`, data)
+}
+
+export const toggleBookStatus = (id) => {
+  return request.put(`/admin/book/status/${id}`)
+}
+
 export const getAllOrders = () => {
   return request.get('/admin/order/list')
 }
@@ -23,12 +35,10 @@ export const getTodaySettlement = () => {
 }
 
 export const getSettlements = (startDate, endDate) => {
-  const params = {}
   if (startDate && endDate) {
-    params.startDate = startDate
-    params.endDate = endDate
+    return request.get('/admin/settlement/range', { params: { startDate, endDate } })
   }
-  return request.get('/admin/settlement/list', { params })
+  return request.get('/admin/settlement/list')
 }
 
 export const generateSettlement = (date) => {

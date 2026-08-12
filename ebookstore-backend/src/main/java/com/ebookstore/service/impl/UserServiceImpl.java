@@ -1,40 +1,40 @@
 package com.ebookstore.service.impl;
 
-import com.ebookstore.dto.*;
+import com.ebookstore.common.BusinessException;
+import com.ebookstore.dto.LoginRequest;
+import com.ebookstore.dto.LoginResponse;
+import com.ebookstore.dto.RegisterRequest;
+import com.ebookstore.dto.UserInfoDTO;
 import com.ebookstore.entity.User;
 import com.ebookstore.mapper.UserMapper;
 import com.ebookstore.service.UserService;
 import com.ebookstore.utils.JwtUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    @Autowired
-    private UserMapper userMapper;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtUtils jwtUtils;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
 
     @Override
     public LoginResponse login(LoginRequest request) {
         User user = userMapper.findByUsername(request.getUsername());
 
         if (user == null) {
-            throw new RuntimeException("用户名不存在");
+            throw new BusinessException("用户名不存在");
         }
 
         if (user.getStatus() == 0) {
-            throw new RuntimeException("账号已被禁用");
+            throw new BusinessException("账号已被禁用");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("密码错误");
+            throw new BusinessException("密码错误");
         }
 
         String token = jwtUtils.generateToken(user.getUsername(), user.getId(), user.getRole());
@@ -46,7 +46,7 @@ public class UserServiceImpl implements UserService {
     public void register(RegisterRequest request) {
         // 检查用户名是否已存在
         if (userMapper.countByUsername(request.getUsername()) > 0) {
-            throw new RuntimeException("用户名已存在");
+            throw new BusinessException("用户名已存在");
         }
 
         User user = new User();
