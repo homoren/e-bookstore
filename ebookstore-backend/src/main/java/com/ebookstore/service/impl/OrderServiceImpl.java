@@ -1,6 +1,7 @@
 package com.ebookstore.service.impl;
 
 import com.ebookstore.common.BusinessException;
+import com.ebookstore.config.CacheConfig;
 import com.ebookstore.dto.CartItemDTO;
 import com.ebookstore.dto.CreateOrderRequest;
 import com.ebookstore.dto.OrderDTO;
@@ -12,6 +13,7 @@ import com.ebookstore.mapper.OrderMapper;
 import com.ebookstore.service.OrderService;
 import com.ebookstore.utils.OrderNoGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +35,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {CacheConfig.BOOK_LIST, CacheConfig.BOOK_DETAIL}, allEntries = true)
     public OrderDTO createOrder(Long userId, CreateOrderRequest request) {
         // 1. 获取购物车选中项
         List<CartItemDTO> cartItems = cartMapper.findByIds(userId, request.getCartItemIds());
@@ -165,6 +168,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
+    @CacheEvict(value = {CacheConfig.BOOK_LIST, CacheConfig.BOOK_DETAIL}, allEntries = true)
     public void cancelOrder(Long userId, Long orderId) {
         Order order = orderMapper.findById(orderId);
         if (order == null) {

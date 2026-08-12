@@ -13,6 +13,14 @@ spring:
     baseline-on-migrate: true
     baseline-version: 0
     locations: classpath:db/migration
+  # Redis 缓存
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 3000ms
+  cache:
+    type: redis
 
 # JWT 配置
 jwt:

@@ -1,6 +1,7 @@
 package com.ebookstore.service.impl;
 
 import com.ebookstore.common.BusinessException;
+import com.ebookstore.config.CacheConfig;
 import com.ebookstore.dto.*;
 import com.ebookstore.entity.*;
 import com.ebookstore.map.DTOMapper;
@@ -8,6 +9,8 @@ import com.ebookstore.mapper.*;
 import com.ebookstore.service.AdminService;
 import com.ebookstore.utils.PurchaseNoGenerator;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +38,7 @@ public class AdminServiceImpl implements AdminService {
     // ========== 进货管理 ==========
     @Override
     @Transactional
+    @CacheEvict(value = {CacheConfig.BOOK_LIST, CacheConfig.BOOK_DETAIL}, allEntries = true)
     public PurchaseDTO createPurchase(CreatePurchaseRequest request) {
         BigDecimal totalCost = BigDecimal.ZERO;
         List<PurchaseItem> items = new ArrayList<>();
@@ -105,17 +109,20 @@ public class AdminServiceImpl implements AdminService {
 
     // ========== 库存管理 ==========
     @Override
+    @CacheEvict(value = {CacheConfig.BOOK_LIST, CacheConfig.BOOK_DETAIL}, allEntries = true)
     public void updateBookStock(Long bookId, Integer stock) {
         bookMapper.updateStock(bookId, stock);
     }
 
     @Override
+    @CacheEvict(value = {CacheConfig.BOOK_LIST, CacheConfig.BOOK_DETAIL}, allEntries = true)
     public void updateBookStatus(Long bookId, Integer status) {
         bookMapper.updateStatus(bookId, status);
     }
 
     // ========== 图书管理 ==========
     @Override
+    @CacheEvict(value = {CacheConfig.BOOK_LIST, CacheConfig.BOOK_DETAIL}, allEntries = true)
     public Book createBook(Book book) {
         book.setId(null);
         book.setStatus(1);  // 新增默认上架
@@ -124,6 +131,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @CacheEvict(value = {CacheConfig.BOOK_LIST, CacheConfig.BOOK_DETAIL}, allEntries = true)
     public void updateBook(Book book) {
         Book exist = bookMapper.findById(book.getId());
         if (exist == null) {
@@ -133,6 +141,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @CacheEvict(value = {CacheConfig.BOOK_LIST, CacheConfig.BOOK_DETAIL}, allEntries = true)
     public void toggleBookStatus(Long bookId) {
         Book exist = bookMapper.findById(bookId);
         if (exist == null) {
@@ -144,6 +153,7 @@ public class AdminServiceImpl implements AdminService {
 
     // ========== 公告管理 ==========
     @Override
+    @CacheEvict(value = CacheConfig.ANNOUNCEMENTS, allEntries = true)
     public AnnouncementDTO createAnnouncement(CreateAnnouncementRequest request) {
         Announcement announcement = new Announcement();
         announcement.setTitle(request.getTitle());
@@ -155,6 +165,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @CacheEvict(value = CacheConfig.ANNOUNCEMENTS, allEntries = true)
     public AnnouncementDTO updateAnnouncement(Long id, CreateAnnouncementRequest request) {
         Announcement announcement = announcementMapper.findById(id);
         if (announcement == null) {
@@ -168,6 +179,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @CacheEvict(value = CacheConfig.ANNOUNCEMENTS, allEntries = true)
     public void deleteAnnouncement(Long id) {
         announcementMapper.deleteById(id);
     }
@@ -179,6 +191,7 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
+    @Cacheable(value = CacheConfig.ANNOUNCEMENTS, key = "'published'")
     public List<AnnouncementDTO> getPublishedAnnouncements() {
         List<Announcement> announcements = announcementMapper.findPublished();
         return announcements.stream().map(this::buildAnnouncementDTO).toList();
