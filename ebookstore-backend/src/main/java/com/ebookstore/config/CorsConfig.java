@@ -14,12 +14,12 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // 仅允许明确的开发地址来源;开启 credentials 时来源不能为 *
-        // 同时覆盖 IPv4(127.0.0.1)与 IPv6(::1)的 localhost,避免浏览器解析为 IPv6 时被拒
+        // 开发环境允许本机任意端口(Vite 在端口被占时会自动换端口,如 5174)
+        // 同时覆盖 IPv4(127.0.0.1)与 IPv6(::1)的 localhost
         config.setAllowedOriginPatterns(List.of(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                "http://[::1]:5173"
+                "http://localhost:*",
+                "http://127.0.0.1:*",
+                "http://[::1]:*"
         ));
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
