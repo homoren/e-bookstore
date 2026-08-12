@@ -6,9 +6,7 @@ import com.ebookstore.dto.CreatePurchaseRequest;
 import com.ebookstore.dto.DailySettlementDTO;
 import com.ebookstore.dto.PurchaseDTO;
 import com.ebookstore.entity.Book;
-import com.ebookstore.entity.DailySettlement;
 import com.ebookstore.entity.Purchase;
-import com.ebookstore.entity.PurchaseItem;
 import com.ebookstore.map.DTOMapper;
 import com.ebookstore.mapper.*;
 import com.ebookstore.service.impl.AdminServiceImpl;
@@ -29,9 +27,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 

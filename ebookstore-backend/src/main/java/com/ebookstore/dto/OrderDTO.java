@@ -14,7 +14,6 @@ public class OrderDTO {
     private Long userId;
     private BigDecimal totalAmount;
     private Integer status;
-    private String statusText;  // 状态文本
     private String receiverName;
     private String receiverPhone;
     private String receiverAddress;

@@ -1,7 +1,6 @@
 package com.ebookstore.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.ebookstore.dto.OrderDTO;
 import com.ebookstore.entity.Order;
 import com.ebookstore.entity.OrderItem;
 import org.apache.ibatis.annotations.*;
