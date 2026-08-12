@@ -35,11 +35,11 @@
       </el-table-column>
       <el-table-column label="操作" width="260" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="openEditDialog(row)">编辑</el-button>
+          <el-button link type="primary" @click="openEditDialog(row as Announcement)">编辑</el-button>
           <el-button
             link
             :type="row.status === 1 ? 'warning' : 'success'"
-            @click="togglePublish(row)"
+            @click="togglePublish(row as Announcement)"
           >
             {{ row.status === 1 ? '下架' : '发布' }}
           </el-button>

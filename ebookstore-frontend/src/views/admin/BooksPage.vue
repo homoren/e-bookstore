@@ -57,8 +57,8 @@
       </el-table-column>
       <el-table-column label="操作" width="160" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="editBook(row)">编辑</el-button>
-          <el-button link :type="row.status === 1 ? 'warning' : 'success'" @click="toggleStatus(row)">
+          <el-button link type="primary" @click="editBook(row as BookDetail)">编辑</el-button>
+          <el-button link :type="row.status === 1 ? 'warning' : 'success'" @click="toggleStatus(row as BookDetail)">
             {{ row.status === 1 ? '下架' : '上架' }}
           </el-button>
         </template>

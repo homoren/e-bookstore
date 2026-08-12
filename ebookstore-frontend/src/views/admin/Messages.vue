@@ -22,13 +22,13 @@
       </el-table-column>
       <el-table-column label="操作" width="260" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="openReplyDialog(row)">
+          <el-button link type="primary" @click="openReplyDialog(row as Message)">
             {{ row.reply ? '修改回复' : '回复' }}
           </el-button>
           <el-button
             link
             :type="row.status === 1 ? 'warning' : 'success'"
-            @click="toggleStatus(row)"
+            @click="toggleStatus(row as Message)"
           >
             {{ row.status === 1 ? '隐藏' : '显示' }}
           </el-button>

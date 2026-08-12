@@ -51,7 +51,7 @@
           <el-button v-if="row.status === 2" type="success" size="small" @click="handleConfirmDelivery(row.id)">
             确认配送
           </el-button>
-          <el-button v-if="row.status === 3" type="warning" size="small" @click="handleComplete(row)">
+          <el-button v-if="row.status === 3" type="warning" size="small" @click="handleComplete(row as Order)">
             完成订单
           </el-button>
         </template>

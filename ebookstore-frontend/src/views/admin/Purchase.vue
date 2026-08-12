@@ -28,7 +28,7 @@
       </el-table-column>
       <el-table-column label="操作" width="100" fixed="right">
         <template #default="{ row }">
-          <el-button link @click="viewDetail(row)">详情</el-button>
+          <el-button link @click="viewDetail(row as Purchase)">详情</el-button>
         </template>
       </el-table-column>
     </el-table>

@@ -49,7 +49,7 @@
                   :min="1"
                   :max="row.stock"
                   size="small"
-                  @change="handleQuantityChange(row)"
+                  @change="handleQuantityChange(row as CartItem)"
                 />
               </template>
             </el-table-column>
