@@ -48,6 +48,14 @@ public class OrderController {
         return Result.ok(order);
     }
 
+    // 用户确认已汇款
+    @PutMapping("/confirm-remittance/{id}")
+    public Result<Void> confirmRemittance(@PathVariable Long id, HttpServletRequest request) {
+        Long userId = (Long) request.getAttribute("userId");
+        orderService.confirmRemittance(userId, id);
+        return Result.ok("已确认汇款，等待店主确认收款");
+    }
+
     // 取消订单
     @PutMapping("/cancel/{id}")
     public Result<Void> cancelOrder(@PathVariable Long id, HttpServletRequest request) {

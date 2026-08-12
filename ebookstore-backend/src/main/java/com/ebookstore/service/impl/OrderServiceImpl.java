@@ -7,6 +7,7 @@ import com.ebookstore.dto.CreateOrderRequest;
 import com.ebookstore.dto.OrderDTO;
 import com.ebookstore.entity.Order;
 import com.ebookstore.entity.OrderItem;
+import com.ebookstore.entity.OrderStatus;
 import com.ebookstore.map.DTOMapper;
 import com.ebookstore.mapper.CartMapper;
 import com.ebookstore.mapper.OrderMapper;
@@ -70,7 +71,7 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderNo(orderNoGenerator.generate());
         order.setUserId(userId);
         order.setTotalAmount(totalAmount);
-        order.setStatus(0);  // 待付款
+        order.setStatus(OrderStatus.PENDING_PAYMENT.getCode());
         order.setReceiverName(request.getReceiverName());
         order.setReceiverPhone(request.getReceiverPhone());
         order.setReceiverAddress(request.getReceiverAddress());
@@ -123,6 +124,21 @@ public class OrderServiceImpl implements OrderService {
                 .toList();
     }
 
+    // 用户确认已汇款:待付款 -> 待汇款确认(状态机补齐 0->1 流转)
+    @Override
+    @Transactional
+    public void confirmRemittance(Long userId, Long orderId) {
+        Order order = orderMapper.findById(orderId);
+        if (order == null) {
+            throw new BusinessException("订单不存在");
+        }
+        if (!order.getUserId().equals(userId)) {
+            throw new BusinessException("无权操作此订单");
+        }
+        transition(order, OrderStatus.AWAITING_REMITTANCE);
+        orderMapper.updateStatus(orderId, OrderStatus.AWAITING_REMITTANCE.getCode());
+    }
+
     @Override
     @Transactional
     public void confirmPayment(Long orderId) {
@@ -130,9 +146,7 @@ public class OrderServiceImpl implements OrderService {
         if (order == null) {
             throw new BusinessException("订单不存在");
         }
-        if (order.getStatus() != 1) {
-            throw new BusinessException("订单状态不正确，当前状态：" + getStatusText(order.getStatus()));
-        }
+        transition(order, OrderStatus.PAID);
 
         // 确认收款，并设置配送截止日期（收款后10日内）
         orderMapper.confirmPayment(orderId, LocalDate.now().plusDays(10));
@@ -145,9 +159,7 @@ public class OrderServiceImpl implements OrderService {
         if (order == null) {
             throw new BusinessException("订单不存在");
         }
-        if (order.getStatus() != 2) {
-            throw new BusinessException("订单状态不正确，当前状态：" + getStatusText(order.getStatus()));
-        }
+        transition(order, OrderStatus.DELIVERED);
 
         orderMapper.confirmDelivery(orderId);
     }
@@ -159,9 +171,7 @@ public class OrderServiceImpl implements OrderService {
         if (order == null) {
             throw new BusinessException("订单不存在");
         }
-        if (order.getStatus() != 3) {
-            throw new BusinessException("订单状态不正确，当前状态：" + getStatusText(order.getStatus()));
-        }
+        transition(order, OrderStatus.COMPLETED);
 
         orderMapper.completeOrder(orderId, receiptSignature);
     }
@@ -177,9 +187,7 @@ public class OrderServiceImpl implements OrderService {
         if (!order.getUserId().equals(userId)) {
             throw new BusinessException("无权操作此订单");
         }
-        if (order.getStatus() != 0 && order.getStatus() != 1) {
-            throw new BusinessException("当前状态无法取消订单");
-        }
+        transition(order, OrderStatus.CANCELLED);
 
         // 恢复库存
         List<OrderItem> items = orderMapper.findItemsByOrderId(orderId);
@@ -196,15 +204,14 @@ public class OrderServiceImpl implements OrderService {
         return dto;
     }
 
-    private String getStatusText(Integer status) {
-        return switch (status) {
-            case 0 -> "待付款";
-            case 1 -> "待汇款确认";
-            case 2 -> "已收款待配送";
-            case 3 -> "已配送";
-            case 4 -> "已完成";
-            case 5 -> "已取消";
-            default -> "未知";
-        };
+    // 统一状态流转校验:不合法流转直接抛业务异常
+    private void transition(Order order, OrderStatus target) {
+        OrderStatus current = OrderStatus.fromCode(order.getStatus());
+        if (current == null) {
+            throw new BusinessException("订单状态未知");
+        }
+        if (!current.canTransitionTo(target)) {
+            throw new BusinessException("订单状态不正确，当前状态：" + current.getText());
+        }
     }
 }

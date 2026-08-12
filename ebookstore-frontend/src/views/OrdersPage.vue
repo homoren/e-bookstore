@@ -99,6 +99,14 @@
                   >
                     查看汇款信息
                   </el-button>
+                  <el-button
+                    v-if="order.status === 0"
+                    type="success"
+                    size="small"
+                    @click="handleConfirmRemittance(order.id)"
+                  >
+                    我已汇款
+                  </el-button>
                 </div>
               </div>
             </div>
@@ -120,7 +128,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
-import { getOrderList, cancelOrder } from '@/api/order'
+import { getOrderList, cancelOrder, confirmRemittance } from '@/api/order'
 import type { Order } from '@/api/types'
 
 const router = useRouter()
@@ -222,6 +230,24 @@ const handleCancel = async (id: number) => {
   } catch (e) {
     if (e !== 'cancel') {
       console.error('取消订单失败')
+    }
+  }
+}
+
+const handleConfirmRemittance = async (id: number) => {
+  try {
+    await ElMessageBox.confirm('确认已完成汇款？请核对汇款信息后确认。', '确认汇款', {
+      confirmButtonText: '已汇款',
+      cancelButtonText: '再看看',
+      type: 'info'
+    })
+
+    await confirmRemittance(id)
+    ElMessage.success('已确认汇款，等待店主确认收款')
+    loadOrders()
+  } catch (e) {
+    if (e !== 'cancel') {
+      console.error('确认汇款失败')
     }
   }
 }

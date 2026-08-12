@@ -21,3 +21,8 @@ export const getOrderDetail = (id: number | string) => {
 export const cancelOrder = (id: number) => {
   return request.put<Result<null>>(`/orders/cancel/${id}`)
 }
+
+// 确认已汇款(待付款 -> 待汇款确认)
+export const confirmRemittance = (id: number) => {
+  return request.put<Result<null>>(`/orders/confirm-remittance/${id}`)
+}

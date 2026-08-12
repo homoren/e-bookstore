@@ -1,5 +1,6 @@
 package com.ebookstore.dto;
 
+import com.ebookstore.entity.OrderStatus;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,17 +27,9 @@ public class OrderDTO {
     private LocalDateTime createdAt;
     private List<OrderItemDTO> items;
 
-    // 获取状态文本
+    // 获取状态文本(复用订单状态机枚举)
     public String getStatusText() {
-        if (status == null) return "未知";
-        return switch (status) {
-            case 0 -> "待付款";
-            case 1 -> "待汇款确认";
-            case 2 -> "已收款，待配送";
-            case 3 -> "已配送";
-            case 4 -> "已完成";
-            case 5 -> "已取消";
-            default -> "未知";
-        };
+        OrderStatus s = OrderStatus.fromCode(status);
+        return s != null ? s.getText() : "未知";
     }
 }
