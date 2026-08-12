@@ -26,3 +26,8 @@ export const getBookDetail = (id) => {
 export const getBooksByParentCategory = (parentId) => {
   return request.get('/books/list-by-parent', { params: { parentId } })
 }
+
+// 分页获取图书列表（服务端分页 + 排序）
+export const getBookPage = (params) => {
+  return request.get('/books/page', { params })
+}

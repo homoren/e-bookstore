@@ -57,7 +57,7 @@
           <div v-loading="loading" class="books-wrapper">
             <div v-if="bookList.length" class="book-grid-list">
               <div
-                v-for="book in pagedBooks"
+                v-for="book in bookList"
                 :key="book.id"
                 class="book-item"
                 @click="goToDetail(book.id)"
@@ -110,12 +110,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
-import {
-  getLevel1Categories,
-  getLevel2Categories,
-  getBookList,
-  getBooksByParentCategory,
-} from '@/api/book'
+import { getLevel1Categories, getLevel2Categories, getBookPage } from '@/api/book'
 
 const route = useRoute()
 const router = useRouter()
@@ -193,52 +188,36 @@ const loadSubCategories = async (parentId) => {
 const loadBooks = async () => {
   loading.value = true
   try {
-    // ✅ 从 URL 读取关键词
+    // 从 URL 读取关键词
     const keyword = route.query.keyword || ''
 
-    let res
+    // 服务端分页参数:二级分类 categoryId / 一级分类 parentId 二选一
+    const params = {
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      sort: sortBy.value,
+      keyword,
+    }
     if (currentSubCategoryId.value) {
-      // 选了二级分类 → 只查当前二级
-      res = await getBookList(currentSubCategoryId.value, keyword)
+      params.categoryId = currentSubCategoryId.value
     } else if (currentCategoryId.value) {
-      // 只选了一级分类 → 查该一级下所有
-      res = await getBooksByParentCategory(currentCategoryId.value)
+      params.parentId = currentCategoryId.value
     } else {
-      // 没选分类 → 全部
-      res = await getBookList(0, keyword)
+      params.categoryId = 0
     }
 
-    let books = Array.isArray(res) ? res : res.data || []
-    books = sortBooks(books)
-    bookList.value = books
-    total.value = books.length
+    const res = await getBookPage(params)
+    const data = res.data || {}
+    bookList.value = data.list || []
+    total.value = data.total || 0
   } catch (error) {
     console.error('获取图书列表失败', error)
     bookList.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }
 }
-
-const sortBooks = (books) => {
-  const sorted = [...books]
-  switch (sortBy.value) {
-    case 'price_asc':
-      return sorted.sort((a, b) => a.price - b.price)
-    case 'price_desc':
-      return sorted.sort((a, b) => b.price - a.price)
-    case 'sales':
-      return sorted.sort((a, b) => (b.salesCount || 0) - (a.salesCount || 0))
-    default:
-      return sorted
-  }
-}
-
-// 当前页展示的图书（前端分页）
-const pagedBooks = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  return bookList.value.slice(start, start + pageSize.value)
-})
 
 const handleCategorySelect = async (index) => {
   const catId = parseInt(index.replace('cat-', ''))
@@ -277,6 +256,7 @@ const changeSort = (type) => {
 
 const handlePageChange = (page) => {
   currentPage.value = page
+  loadBooks()
 }
 
 const goToDetail = (id) => {

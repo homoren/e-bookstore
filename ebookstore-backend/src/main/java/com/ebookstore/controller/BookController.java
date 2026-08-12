@@ -1,6 +1,7 @@
 package com.ebookstore.controller;
 
 import com.ebookstore.common.BusinessException;
+import com.ebookstore.common.PageResult;
 import com.ebookstore.common.Result;
 import com.ebookstore.dto.BookDetailDTO;
 import com.ebookstore.dto.BookListDTO;
@@ -54,5 +55,17 @@ public class BookController {
             @RequestParam(required = false, defaultValue = "0") Integer categoryId,
             @RequestParam(required = false) String keyword) {
         return Result.ok(bookService.getBooksByCategoryAndKeyword(categoryId, keyword));
+    }
+
+    // 分页获取图书列表（服务端分页 + 排序）
+    @GetMapping("/page")
+    public Result<PageResult<BookListDTO>> getBookPage(
+            @RequestParam(required = false, defaultValue = "0") Integer categoryId,
+            @RequestParam(required = false) Integer parentId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "default") String sort,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "12") int pageSize) {
+        return Result.ok(bookService.getBooksPage(categoryId, parentId, keyword, sort, page, pageSize));
     }
 }

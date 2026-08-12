@@ -1,5 +1,6 @@
 package com.ebookstore.service.impl;
 
+import com.ebookstore.common.PageResult;
 import com.ebookstore.dto.BookDetailDTO;
 import com.ebookstore.dto.BookListDTO;
 import com.ebookstore.mapper.BookMapper;
@@ -33,5 +34,14 @@ public class BookServiceImpl implements BookService {
     @Override
     public List<BookListDTO> getBooksByCategoryAndKeyword(Integer categoryId, String keyword) {
         return bookMapper.findBooksByCategoryIdAndKeyword(categoryId, keyword);
+    }
+
+    @Override
+    public PageResult<BookListDTO> getBooksPage(Integer categoryId, Integer parentId, String keyword,
+                                                String sort, int page, int pageSize) {
+        int offset = (page - 1) * pageSize;
+        List<BookListDTO> list = bookMapper.findBooksPage(categoryId, parentId, keyword, sort, offset, pageSize);
+        long total = bookMapper.countBooks(categoryId, parentId, keyword);
+        return PageResult.of(list, total, page, pageSize);
     }
 }

@@ -88,6 +88,45 @@ public interface BookMapper {
             @Param("keyword") String keyword
     );
 
+    // 分页查询图书(categoryId 二级分类 / parentId 一级分类 二选一,可带关键词与排序)
+    @Select({
+            "<script>",
+            "SELECT id, title, author, cover_image, price, stock, difficulty_level, publisher, sales_count ",
+            "FROM book ",
+            "WHERE status = 1 ",
+            "<if test='categoryId != null and categoryId != 0'>AND category_id = #{categoryId}</if>",
+            "<if test='parentId != null'>AND category_id IN (SELECT id FROM category WHERE parent_id = #{parentId})</if>",
+            "<if test='keyword != null and keyword != \"\"'>AND (title LIKE CONCAT('%', #{keyword}, '%') OR author LIKE CONCAT('%', #{keyword}, '%'))</if>",
+            "<choose>",
+            "   <when test='sort == \"price_asc\"'>ORDER BY price ASC</when>",
+            "   <when test='sort == \"price_desc\"'>ORDER BY price DESC</when>",
+            "   <when test='sort == \"sales\"'>ORDER BY sales_count DESC</when>",
+            "   <otherwise>ORDER BY sales_count DESC</otherwise>",
+            "</choose>",
+            "LIMIT #{offset}, #{size}",
+            "</script>"
+    })
+    List<BookListDTO> findBooksPage(@Param("categoryId") Integer categoryId,
+                                    @Param("parentId") Integer parentId,
+                                    @Param("keyword") String keyword,
+                                    @Param("sort") String sort,
+                                    @Param("offset") int offset,
+                                    @Param("size") int size);
+
+    // 分页查询总数
+    @Select({
+            "<script>",
+            "SELECT COUNT(*) FROM book ",
+            "WHERE status = 1 ",
+            "<if test='categoryId != null and categoryId != 0'>AND category_id = #{categoryId}</if>",
+            "<if test='parentId != null'>AND category_id IN (SELECT id FROM category WHERE parent_id = #{parentId})</if>",
+            "<if test='keyword != null and keyword != \"\"'>AND (title LIKE CONCAT('%', #{keyword}, '%') OR author LIKE CONCAT('%', #{keyword}, '%'))</if>",
+            "</script>"
+    })
+    long countBooks(@Param("categoryId") Integer categoryId,
+                    @Param("parentId") Integer parentId,
+                    @Param("keyword") String keyword);
+
     // 新增图书（管理端）
     @Insert("INSERT INTO book (title, author, isbn, publisher, publish_date, category_id, price, cost_price, " +
             "stock, cover_image, description, detail_html, sample_code_url, difficulty_level, status) " +
