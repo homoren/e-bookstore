@@ -29,6 +29,12 @@ jwt:
   # 有效期(毫秒),默认 7 天
   expiration: 604800000
 
+# 登录防爆破
+security:
+  login:
+    max-attempts: 5     # 连续失败次数
+    lock-minutes: 15    # 锁定分钟数
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
