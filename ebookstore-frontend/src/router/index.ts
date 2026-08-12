@@ -116,19 +116,20 @@ const router = createRouter({
   ]
 })
 
-// 路由守卫
-router.beforeEach((to, from, next) => {
+// 路由守卫(Vue Router 5 起直接 return,替代废弃的 next 回调)
+router.beforeEach((to) => {
   const userStore = useUserStore()
 
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
-    next({ name: 'login', query: { redirect: to.fullPath } })
-  } else if (to.meta.requiresAdmin && !userStore.isAdmin) {
-    next({ name: 'home' })
-  } else if (to.meta.guest && userStore.isLoggedIn) {
-    next({ name: 'home' })
-  } else {
-    next()
+    return { name: 'login', query: { redirect: to.fullPath } }
   }
+  if (to.meta.requiresAdmin && !userStore.isAdmin) {
+    return { name: 'home' }
+  }
+  if (to.meta.guest && userStore.isLoggedIn) {
+    return { name: 'home' }
+  }
+  return true
 })
 
 export default router
