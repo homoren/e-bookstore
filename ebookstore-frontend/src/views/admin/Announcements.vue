@@ -85,7 +85,6 @@
 
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   getAllAnnouncements,
   createAnnouncement,

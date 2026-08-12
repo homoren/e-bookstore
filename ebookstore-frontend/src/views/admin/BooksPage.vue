@@ -149,7 +149,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { getLevel1Categories, getLevel2Categories, getBookList } from '@/api/book'
 import { createBook, updateBook, toggleBookStatus } from '@/api/admin'
 

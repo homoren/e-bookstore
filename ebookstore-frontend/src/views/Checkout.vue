@@ -132,7 +132,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'

@@ -77,7 +77,6 @@
 import { ref } from 'vue'
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { getAllOrders, confirmPayment, confirmDelivery, completeOrder } from '@/api/admin'
 
 const router = useRouter()

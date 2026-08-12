@@ -37,3 +37,7 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# unplugin-auto-import / unplugin-vue-components 生成的类型声明
+src/auto-imports.d.ts
+src/components.d.ts

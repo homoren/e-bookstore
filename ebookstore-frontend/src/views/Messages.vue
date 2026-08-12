@@ -81,7 +81,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getMessages, createMessage } from '@/api/message'

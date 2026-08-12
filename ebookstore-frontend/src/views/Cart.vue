@@ -111,7 +111,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getCartList, updateCartItem, deleteCartItem, clearCart } from '@/api/cart'

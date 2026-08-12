@@ -118,7 +118,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'
 import { getOrderList, cancelOrder } from '@/api/order'

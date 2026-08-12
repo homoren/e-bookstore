@@ -94,7 +94,6 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { register, checkUsername as checkUsernameApi } from '@/api/user'
 import Header from '@/components/Header.vue'
 import Footer from '@/components/Footer.vue'

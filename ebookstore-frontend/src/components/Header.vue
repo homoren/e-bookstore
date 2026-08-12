@@ -79,7 +79,6 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getLevel1Categories } from '@/api/book'
-import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
