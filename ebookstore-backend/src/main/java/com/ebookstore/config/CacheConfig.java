@@ -59,8 +59,8 @@ public class CacheConfig {
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
         mapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY);
+                ObjectMapper.DefaultTyping.EVERYTHING,
+                JsonTypeInfo.As.WRAPPER_ARRAY);
         return new GenericJackson2JsonRedisSerializer(mapper);
     }
 }

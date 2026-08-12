@@ -194,7 +194,8 @@ public class AdminServiceImpl implements AdminService {
     @Cacheable(value = CacheConfig.ANNOUNCEMENTS, key = "'published'")
     public List<AnnouncementDTO> getPublishedAnnouncements() {
         List<Announcement> announcements = announcementMapper.findPublished();
-        return announcements.stream().map(this::buildAnnouncementDTO).toList();
+        // 用 ArrayList 而非 .toList(),保证缓存反序列化时能构造容器
+        return announcements.stream().map(this::buildAnnouncementDTO).collect(Collectors.toList());
     }
 
     @Override
