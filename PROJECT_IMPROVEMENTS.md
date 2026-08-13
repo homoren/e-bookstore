@@ -92,3 +92,47 @@
 12. 数据库怎么初始化的?(答:后端启动 Flyway 自动建表)
 13. 数据怎么持久化?(答:Docker 数据卷,重建容器不丢)
 14. 生产环境怎么更新?(答:git pull + docker compose up -d --build)
+
+---
+
+## 五、简历写法(可直接套用)
+
+### 项目定位
+
+```
+项目名称:电子书商城 My-eBookStore(个人全栈项目)
+角色:独立开发
+技术栈:Java 17 · Spring Boot 3.2 · MyBatis-Plus · MySQL · Redis · Spring Security
+        · Vue 3 · TypeScript · Vite · Docker · GitHub Actions
+```
+
+### 详版(4-5 条,推荐)
+
+```
+- 独立完成图书商城全栈开发:会员、两级分类与检索、购物车、订单(下单→汇款→收款→配送→完成)、
+  店主后台(图书管理/进货/日结/客户)等完整业务闭环
+- 基于 Spring Security + JWT 构建无状态认证,统一 Result 响应体与全局异常处理;
+  引入 Redis + Spring Cache 缓存热点数据并自动失效,实测缓存命中率 95%、接口延迟由 562ms 降至 13ms(约 40 倍)
+- 用 OrderStatus 枚举实现订单状态机,统一校验状态流转(0→1→2→3→4),拦截非法跳转;
+  接入 Flyway 管理数据库迁移,基于 MyBatis-Plus 通用 CRUD + 分页插件
+- 前端 Vue 3 + TypeScript + Element Plus(按需引入,主包 1.1MB→326KB),
+  通过 openapi-typescript 实现前后端类型全链路同步
+- 编写 19 个后端单测(Mockito,覆盖订单状态机/库存/日结)与 7 个前端单测(Vitest + MSW),
+  接入 GitHub Actions CI,并用 Docker Compose 一键部署 MySQL+Redis+后端+nginx
+```
+
+### 简版(3 条)
+
+```
+- 独立完成电子书商城全栈:会员、图书检索、购物车、订单状态流转、店主后台(进货/日结/客户)完整闭环
+- 后端 Spring Boot + MyBatis-Plus + Redis + Spring Security;Redis 缓存实测命中率 95%、
+  接口提速约 40 倍;实现订单状态机与登录防爆破
+- 前端 Vue 3 + TypeScript,openapi-typescript 前后端类型同步;19 后端 + 7 前端单测、
+  GitHub Actions CI、Docker Compose 一键部署
+```
+
+### 写简历的 3 条铁律
+
+1. **数字是最强证据**——"95% 命中率""40 倍提速""326KB"这些比形容词有用一万倍
+2. **只写你能讲清楚的**——面试官会追着每一条问,答不上来的宁可删掉也不写
+3. **千万别写没做的**——"高并发""分布式""微服务"一个都不许出现,写了是减分项
