@@ -227,6 +227,229 @@
 
 59. 你在项目里遇到过最难的 bug 是什么?怎么定位的?(推荐讲缓存反序列化或登录 403)
 60. 一次完整的 bug 排查流程是怎样的?(复现→看日志→缩小范围→定位→修复→回归测试)
+
+---
+
+## 七、面试问题参考答案
+
+### A. 整体架构
+
+**1. 整体架构 / 一次完整请求流程**
+前后端分离。浏览器 → nginx(生产)/Vite 代理(开发)→ Spring Boot Controller → Service(事务)→ Mapper(MyBatis-Plus)→ MySQL;热点读先查 Redis 缓存。例:登录请求 → 前端 axios 带 Authorization → JWT 过滤器校验 → SecurityContext 写入 → Controller → Service 校验密码(BCrypt)→ 签发 JWT 返回。
+
+**2. 为什么前后端分离**
+职责清晰、可独立部署扩展、前端可单独优化体验、后端接口可复用。代价:多一层通信、有跨域/联调成本(用 OpenAPI 契约同步缓解)。
+
+**3. 为什么单体不用微服务**
+业务规模小、单团队单机够用。微服务引入服务发现/分布式事务/链路追踪等复杂度,对这个体量是过度设计。模块化单体 + 以后按需拆分才是合适的演进路线。
+
+**4. 分层职责**
+Controller:参数校验、绑定用户、返回统一 Result;Service:业务逻辑 + 事务 + 状态机校验;Mapper:数据访问(MyBatis-Plus 通用 CRUD + 自定义 SQL)。DTO 与实体分离,避免直接暴露数据库结构。
+
+**5. 核心业务逻辑在哪**
+订单模块(状态机流转、库存扣减、配送截止日期)、日结模块(销售额/成本/利润计算)、进货模块(成本核算 + 库存联动)。
+
+**6. 用户量增长十倍哪里先扛不住**
+数据库(热点查询)→ 已用 Redis 缓存缓解;其次是 Tomcat 线程(可上虚拟线程/调连接池)。再往上:读写分离、分库分表,但那是大厂场景。
+
+**7. 做了多久 / 独立完成**
+(按自己实际说。强调:从需求→设计→实现→测试→部署全链路独立完成。)
+
+### B. Spring 核心
+
+**8. Spring Boot 启动流程 / 自动配置**
+main → SpringApplication.run → 创建 ApplicationContext → 扫描 @Component → 执行自动配置(@ConditionalOnXxx 按条件装配 Bean)→ 内嵌 Tomcat 启动。自动配置 = 一堆 AutoConfiguration 类 + @Conditional,按 classpath 和配置决定装配什么。
+
+**9. JWT 过滤器位置**
+JwtAuthenticationFilter 放在 UsernamePasswordAuthenticationFilter 之前。因为要**先解析 token、把认证信息放进 SecurityContext**,后续的授权判断(@PreAuthorize / URL 匹配)才能用上。放前面保证认证在授权之前完成。
+
+**10. @PreAuthorize 和 URL 匹配区别**
+URL 匹配(hasRole)是粗粒度、集中配置;@PreAuthorize 是方法级细粒度、就近声明。我用在 AdminController 类上双保险:URL 层兜底 + 方法级保证,即使 URL 配置漏了,方法级也拦住。
+
+**11. 事务失效场景**
+自调用(同类方法内部调,@Transactional 代理不生效)、非 public 方法、异常被 catch 吞掉、代理未生效(直接 new 对象)。我在 getTodaySettlement 自调用日结方法时也遇到过类似问题,要注意。
+
+**12. 构造器注入 vs 字段注入**
+构造器注入:依赖不可变、便于测试(直接 new 传 mock)、Spring 会检测循环依赖;字段注入隐藏依赖、不好测。团队规范更推荐构造器注入。
+
+**13. 全局异常处理 / 为什么业务错误用 200**
+@RestControllerAdvice 拦截所有 Controller 异常。业务异常(BusinessException)返回 HTTP 200 + `{success:false, message}`,前端拦截器统一弹提示;**401/403 才用真实 HTTP 状态码**触发前端跳转。好处:前后端约定一套响应体,业务错误不需要 HTTP 语义,前端处理简单统一。
+
+**14. Bean 生命周期 / 单例**
+@Service 默认单例(一个实例共享)。生命周期:实例化 → 属性注入 → 初始化(@PostConstruct)→ 使用 → 销毁。单例注意线程安全(我的 LoginAttemptService 用 ConcurrentHashMap 保证)。
+
+**15. 为什么 MapStruct**
+编译期生成映射代码,无反射开销、字段名变了编译期报错;比手写 setter 省几百行,比 BeanUtils 反射更快更安全。
+
+### C. 数据库 / MySQL
+
+**16. 表结构 / 为什么订单拆两张表**
+订单表(头部:金额/收货人/状态/时间戳)+ 订单明细表(每条商品)。一对多关系,拆开避免冗余、便于单独统计单品销量。1NF 规范化。
+
+**17. Flyway 意义 / 怎么加一列**
+Flyway 记录迁移版本(history 表),启动时自动执行未应用的脚本。加列:写 `V4__xxx.sql`(`ALTER TABLE ... ADD COLUMN`),Flyway 按版本顺序执行,团队/环境可复现。
+
+**18. 索引优化 / 慢查询分析**
+V3 迁移给 order(created_at/status)、order_item(book_id)、message(created_at) 等加索引,覆盖列表排序、状态过滤、联表场景。用 EXPLAIN 看是否走索引、有没有全表扫描。
+
+**19. N+1 怎么解决**
+原来订单列表对每条订单循环查明细(1 + N 次查询)。改为:先查订单列表,再用 `WHERE order_id IN (...)` 一次查出所有明细,Java 侧分组组装 → 2 次查询。
+
+**20. 库存并发安全**
+下单扣库存用 `UPDATE book SET stock = stock - n WHERE id = ? AND stock >= n`,条件更新保证"库存够才扣",影响行数为 0 说明不够 → 抛异常回滚。这是数据库层原子操作,避免超卖。
+
+**21. order 为什么加反引号**
+`order` 是 MySQL 保留字(ORDER BY),直接写会语法错误,所以 SQL 里用反引号 `` `order` `` 包裹。
+
+**22. MyBatis-Plus 分页原理**
+PaginationInnerInterceptor 拦截 SQL,自动改写:先执行 count 查询,再给原 SQL 拼接 LIMIT offset,size。自定义方法传入 Page 参数即可。
+
+### D. Redis / 缓存
+
+**23. 缓存了哪些数据 / 为什么**
+分类(1h)、图书列表/分页(30m)、图书详情(30m)、已发布公告(30m)。都是**读多写少**的热点数据,缓存收益最大。
+
+**24. 缓存一致性**
+写操作(下单/进货/图书增改/公告增改)标 `@CacheEvict`,操作成功后清缓存;再加 TTL 兜底,即使漏清也会过期自愈。读侧 `@Cacheable` 先查缓存再查库。
+
+**25. 穿透 / 击穿 / 雪崩**
+穿透:查不存在的 key 打库 → 缓存空值或布隆过滤器(当前项目对不存在的 key 不缓存,靠前端校验兜底);击穿:热点 key 过期瞬间高并发打库 → 互斥锁/逻辑过期(暂未做,可扩展);雪崩:大量 key 同时过期 → TTL 加随机值(可扩展)。
+
+**26. 缓存序列化的坑**
+LocalDate/LocalDateTime 默认不支持 → 注册 jsr310 模块;GenericJackson2JsonRedisSerializer 顶层 List 无类型标注导致反序列化失败 → 改用 EVERYTHING + WRAPPER_ARRAY;PageResult 无无参构造 → 补 @NoArgsConstructor。
+
+**27. 多级缓存**
+Caffeine(本地 JVM)L1 + Redis L2:本地快、跨实例共享。但单机部署 L1 缓存更新要手动清(本地节点才知道),复杂度高、收益有限,所以当前用 Redis 单层,多级是进阶方案。
+
+**28. 缓存与数据库不一致**
+业务上接受短暂不一致(TTL 兜底),写操作主动清缓存保证下一次读是新的;极端场景可用延迟双删/消息队列,但当前规模不需要。
+
+**29. 为什么下单清图书缓存**
+下单扣了库存、销量 +1,缓存里的库存/销量是旧的,不清会显示过期数据。所以 createOrder 标 @CacheEvict 清 bookList/bookDetail。
+
+**30. 命中率怎么测**
+清空 Redis → 冷请求(查库)计时 562ms → 连续 20 次热请求平均 13ms → 后端日志里 SQL 查询次数对比(21 次请求仅 1 次查库)→ 命中率 ≈ 95%。
+
+### E. 订单状态机
+
+**31. 状态机设计**
+OrderStatus 枚举:待付款(0)/待汇款确认(1)/已收款(2)/已配送(3)/已完成(4)/已取消(5),枚举内定义合法流转表(Map<状态, 可转移集合>),所有状态变更走统一 `transition()` 校验。
+
+**32. 非法流转拦截**
+transition() 查流转表,不在表里直接抛"订单状态不正确,当前状态:xxx"。如 0 直接确认收款(0→2,跳过汇款)会被拒;5(已取消)再取消也报错。
+
+**33. 状态机放哪**
+枚举放 entity(和 Order 同包),校验逻辑放 Service。实体只描述状态,Service 负责状态变更规则,职责清晰。
+
+**34. 0→1 为什么是 bug**
+原代码 createOrder 只置 0,confirmPayment 要求状态==1,但**没有任何地方把 0 改成 1** → 店主永远无法确认收款(状态 1 不可达)。补了 confirmRemittance(0→1)接口 + 前端"我已汇款"按钮。
+
+**35. 加退款状态怎么改**
+枚举加 REFUNDING/REFUNDED,流转表里加合法路径(如已完成(4)→退款中),transition 校验自动生效,几乎零改动业务代码。
+
+### F. 安全
+
+**36. JWT 认证流程**
+登录成功后用 jjwt 生成 token(sub=username, claim=userId/role, 有效期7天, HS256 签名)→ 前端存 localStorage,请求带 Authorization: Bearer xxx → 过滤器解析校验 → 写 SecurityContext。无状态:服务端不存会话,靠签名验真。
+
+**37. 密钥管理**
+JWT 密钥走环境变量 JWT_SECRET(yml 里 `${JWT_SECRET:默认值}`),部署时 .env 注入。泄露应对:换密钥(旧 token 全部失效)+ 缩短有效期 + 必要时候加 refresh token。
+
+**38. 为什么 BCrypt**
+BCrypt 自带盐 + 计算成本可调,同样密码每次哈希不同,抗彩虹表;MD5/SHA 是快速哈希,容易被撞库和彩虹表破解。加盐 + 慢哈希才是存密码的正解。
+
+**39. 防爆破实现 / 局限**
+LoginAttemptService:ConcurrentHashMap 记录失败次数,连续失败 5 次锁定 15 分钟(可配置),登录成功清零;失败提示统一"用户名或密码错误"防用户名枚举。局限:内存 Map 是**单机状态**,多实例部署各算各的,要换 Redis 集中计数。
+
+**40. 为什么关 CSRF**
+CSRF 针对 cookie 会话:攻击者诱导浏览器自动带 cookie 发请求。我的 JWT 放在**请求头 Authorization**,不是 cookie,浏览器不会自动携带 → 无 CSRF 风险,所以关闭。
+
+**41. CORS 排查过程**
+现象:登录 403。用带不同 Origin 的 curl 复现 → 发现 `http://[::1]:5173` 403 → 前端 dev 监听 IPv6,浏览器解析 localhost 成 ::1;后来又发现 Vite 端口漂移(5173→5174)。最终 allowedOriginPatterns 改通配 `localhost:* / 127.0.0.1:* / [::1]:*`。
+
+**42. 401/403 返回 / 前端处理**
+Security 的 AuthenticationEntryPoint 返回 401 JSON、AccessDeniedHandler 返回 403 JSON。前端 axios 拦截器:401 → 清 token 跳登录;403 → 提示无权访问;其他错误显示后端 message。
+
+### G. 前端 / TypeScript
+
+**43. 为什么转 TypeScript**
+纯 JS 时接口返回是 any,字段写错运行期才炸(项目里就遇到过 `res.exists`/`res.data` 手写容错)。TS 后编译期报错,配合后端生成的类型,字段对不上直接红。
+
+**44. openapi-typescript 同步原理**
+后端 SpringDoc 自动生成 OpenAPI 契约(JSON)→ 前端 `openapi-typescript` 生成 TS 类型文件(generated.ts)→ api 层引用。后端字段变了,重新生成 + type-check 立刻发现前端哪里没跟上。
+
+**45. 服务端分页 vs 前端分页**
+前端分页:一次拉全量内存里切,数据量大了卡且浪费流量;服务端分页:传 page/pageSize,后端 SQL LIMIT + count,只返回一页,数据量大也稳。排序也移到后端避免"只排当前页"的错误。
+
+**46. Element Plus 按需引入**
+unplugin-vue-components + ElementPlusResolver:模板里用到哪个 el-xxx 才引入对应组件和样式,ElMessage 等函数用 unplugin-auto-import 自动导入。主包从 1.1MB 降到 326KB。
+
+**47. Vue3 vs Vue2**
+Composition API(逻辑复用、代码组织)、响应式用 Proxy(性能更好、支持新增属性)、更小的运行时、Teleport/Fragments 等。
+
+**48. Pinia vs Vuex**
+Pinia 更轻、TS 友好、无 mutation(直接改 state)、模块化天然;Vuex 更重、要写 mutation/模块样板。新项目用 Pinia。
+
+**49. Vue Router 5 守卫**
+`router.beforeEach((to) => { ... return true / return {name:'xxx'} })`,直接 return 结果;`next()` 回调已废弃(控制台会警告),我改成了 return 写法。
+
+**50. 组件通信**
+props 下行、emit 上行、defineExpose 父拿子实例、provide/inject 跨层级、Pinia 全局状态。本项目 Header 用 Pinia 读登录态,父子用 props/emit。
+
+### H. 测试 / CI / 部署
+
+**51. 单测 / Mockito 原理**
+@Mock 生成接口假实现(返回默认值),@InjectMocks 把 mock 注入被测类。测 Service 时 mock Mapper,专注测业务逻辑(状态机流转、库存、计算),不依赖真实数据库。原理:JDK 动态代理/字节码生成代理。
+
+**52. MSW 是什么**
+Mock Service Worker:在**网络层**拦截 axios 请求,返回预设的 mock 数据,测试不依赖真实后端、也不污染组件逻辑。setupServer(node 环境用)。
+
+**53. CI 步骤 / 为什么带 MySQL**
+后端:compile + test(带 MySQL 服务容器,因为 contextLoads + Flyway 要连库验证完整启动);前端:npm ci → type-check → lint → 单测 → build。每次 push 自动验证。
+
+**54. Docker 多阶段构建**
+后端:阶段1 maven 镜像编译打包 → 阶段2 JRE 镜像只拷 jar(镜像小);前端:阶段1 node 构建 dist → 阶段2 nginx 托管静态文件 + 反代 /api。前端要 nginx 是因为要托管静态资源 + 做 SPA fallback + 代理接口。
+
+**55. 数据库初始化**
+后端启动 Flyway 自动执行 V1~V3:建表 + 种子数据 + 索引,不需要手动建库建表。
+
+**56. 数据持久化**
+docker-compose 挂数据卷(mysql-data / redis-data),容器删了重建数据还在。
+
+**57. 部署更新**
+服务器上 `git pull` 拉新代码 → `docker compose up -d --build` 重新构建变更的服务并重启。数据卷不删就不丢数据。
+
+**58. 部署踩过的坑**
+npm 镜像源(国内镜像 GitHub 拉不到 → 锁文件改官方源)、npm 版本不一致(npm 11 生成的锁 npm 10 不认 → 用 npm 10 重新生成)、dts 文件缺失导致 CI type-check 失败 → 提交生成文件。
+
+### I. 排查 / 综合
+
+**59. 最难 bug(推荐讲缓存反序列化)**
+现象:公告/图书列表接口读缓存报错。定位:看日志发现 `Could not read JSON`,发现是 GenericJackson2JsonRedisSerializer 顶层 List 无类型标注 + PageResult 无无参构造。修复:改 EVERYTHING + WRAPPER_ARRAY、补 @NoArgsConstructor、被缓存方法返回 ArrayList。另一个可讲的:登录 403(CORS IPv6/端口漂移)。
+
+**60. 完整排查流程**
+复现(稳定触发)→ 看日志定位异常栈 → 缩小范围(前端/后端/网络/缓存)→ 定位根因 → 修复 → 回归测试(现有单测 + 手工验证)→ 必要时补测试防回归。
+
+**61. 项目最大亮点**
+(选一个讲透)建议讲 **Redis 缓存**:从设计(哪些数据、怎么失效、怎么保一致)到实测数字(95% 命中率、40 倍提速),既有方案又有数据。
+
+**62. 再给一周想改进什么**
+补 Playwright E2E 测试(浏览器走通下单)、上 HTTPS + 域名、加 Redis 集中式登录限流(多实例可扩展)、监控告警。
+
+**63. 为什么这个技术栈**
+主流、招人市场大、我熟悉:后端 Spring Boot + MyBatis-Plus(保留 SQL 控制又少写样板),前端 Vue3 + TS,缓存 Redis。换的话 JPA(如果团队偏好领域模型)。
+
+**64. 做得不好的地方**
+初期纯 JS 没类型、代码有死代码;缓存序列化配置没提前测 List 场景;后端测试补得晚。都是复盘后意识到,后面通过 TS/测试/缓存修复补齐了。
+
+**65. 多人协作怎么做**
+契约先行:先定 OpenAPI 接口文档(本项目正好用 SpringDoc + openapi-typescript),前端按契约开发;数据库用 Flyway 迁移脚本统一;Git 分支 + PR + code review。
+
+**66. 怎么保证代码质量**
+分层清晰、统一 Result/异常处理、19 个后端单测 + 7 个前端单测、GitHub Actions CI 每 push 自动验证、接口文档化。前端 lint(type-check/oxlint)纳入 CI。
+
+**67. 能支撑真实用户吗 / 差距**
+单机 MySQL + Redis 能支撑中小量用户。和真实生产差距:无集群/高可用、无限流(登录有限流但接口没有)、无监控告警、无备份恢复、无日志平台。
 61. 你的项目最大的亮点是什么?为什么?
 62. 如果再给你一周,你想改进什么?(答:补 E2E 测试 / 上 HTTPS / 部署监控)
 63. 为什么选这个技术栈?换一个你会选什么?
