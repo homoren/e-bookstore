@@ -8,8 +8,8 @@ services:
       MYSQL_DATABASE: ebookstore
     volumes:
       - mysql-data:/var/lib/mysql
-    ports:
-      - "127.0.0.1:3306:3306"   # 仅本机可访问,便于排查
+    # 不映射宿主机端口:后端通过 compose 服务名 mysql:3306 访问,
+    # 避免宿主机 3306 被占用冲突(如需本机调试数据库再自行加映射)
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -38,12 +38,13 @@ services:
       redis:
         condition: service_healthy
     environment:
+      # 用 compose 服务名,不要用 localhost/IP
       DB_URL: jdbc:mysql://mysql:3306/ebookstore?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8&allowPublicKeyRetrieval=true
       DB_PASSWORD: ${MYSQL_PASSWORD:-123456}
       REDIS_HOST: redis
       JWT_SECRET: ${JWT_SECRET:-my-ebookstore-secret-key-2024-very-long-key}
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT:-8080}:8080"
 
   frontend:
     build: ./ebookstore-frontend
@@ -52,7 +53,8 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"
+      # 宿主 80 若被占用(如已有 nginx),改 .env 里的 FRONTEND_PORT
+      - "${FRONTEND_PORT:-80}:80"
 
 volumes:
   mysql-data:

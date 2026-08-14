@@ -116,6 +116,43 @@ docker compose up -d --build
 - MySQL / Redis 数据持久化在数据卷,重建容器不丢数据
 - 后端启动时 Flyway 自动初始化表结构
 
+### 部署常见问题与排查
+
+**镜像拉取超时 / DNS 失败(国内常见)**
+Docker Hub 在国内经常拉不动。配置镜像加速:
+```bash
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<'EOF'
+{ "registry-mirrors": ["https://docker.m.daocloud.io", "https://dockerproxy.com"] }
+EOF
+sudo systemctl restart docker
+```
+(Maven / npm 构建阶段下载慢同理,可配国内镜像源)
+
+**端口被占用**
+- 宿主机 80 被 nginx 占 → 改 `.env` 的 `FRONTEND_PORT=8081` 后 `docker compose up -d`
+- 宿主机 8080 被旧 Java 进程占 → `netstat -ano | grep 8080` 找到 PID 后 `kill` 掉,或改 `BACKEND_PORT`
+- MySQL 不再映射宿主机端口(后端走 compose 内网),不会和宿主机 MySQL 冲突
+
+**MySQL 密码错误(Access denied)**
+> 改 `.env` 的 `MYSQL_PASSWORD` **不会**改已有数据卷里的密码。首次部署后想换密码必须:
+> `docker compose down -v`(清空数据库数据)再重新 up,或进旧 MySQL 里 `ALTER USER` 改。
+
+**后端容器反复重启**
+多半是连不上数据库:先看日志 `docker compose logs backend`。确认 `DB_PASSWORD` 与 MySQL 一致;compose 已用 `depends_on + healthcheck` 等 MySQL 就绪。
+
+**容器内连数据库/Redis 要用服务名**
+后端连接 MySQL 用的是 `mysql:3306`、Redis 是 `redis`,不是 `localhost` 也不是 IP——容器内 `localhost` 指容器自己。compose 已配好,不要手动改成 IP。
+
+**前端页面 404 / 样式旧**
+多为浏览器缓存,`Ctrl+Shift+R` 强刷。SPA 路由由 nginx `try_files` 兜底,直接刷新任意路径也能回到页面。
+
+**外部访问不了**
+云服务商安全组要放行 `80`(前端)和 `8080`(后端/接口文档)端口。
+
+**前端跨域报错**
+生产环境前端由 nginx 托管,`/api` 同源反代到后端,**不存在跨域**。只有直接访问后端 8080 或另起前端才会遇到,正常用 80 端口访问即可。
+
 ## 测试与 CI
 
 ```bash
