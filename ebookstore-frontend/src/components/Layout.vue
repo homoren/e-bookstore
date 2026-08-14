@@ -69,7 +69,7 @@
       <div class="admin-header">
         <div class="header-left">
           <el-icon><Operation /></el-icon>
-          <span>欢迎回来，{{ userStore.userInfo.realName || userStore.userInfo.username }}</span>
+          <span>欢迎回来，{{ userStore.userInfo?.realName || userStore.userInfo?.username }}</span>
         </div>
         <div class="header-right">
           <router-link to="/" class="home-link">

@@ -7,7 +7,7 @@
           <div class="user-links">
             <template v-if="userStore.isLoggedIn">
               <span class="username">{{
-                userStore.userInfo.realName || userStore.userInfo.username
+                userStore.userInfo?.realName || userStore.userInfo?.username
               }}</span>
               <el-dropdown @command="handleCommand">
                 <span class="el-dropdown-link">

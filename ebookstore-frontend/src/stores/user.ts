@@ -5,9 +5,20 @@ import type { LoginResult, UserInfo } from '@/api/types'
 
 const ROLE_ADMIN = 2
 
+// 从 localStorage 加载用户信息;处理残留的 "null"/损坏 JSON,避免 userInfo 为 null 导致模板崩溃
+function loadInitialUserInfo(): UserInfo {
+  const raw = localStorage.getItem('userInfo')
+  if (!raw) return {} as UserInfo
+  try {
+    return (JSON.parse(raw) || {}) as UserInfo
+  } catch {
+    return {} as UserInfo
+  }
+}
+
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
-  const userInfo = ref<UserInfo>(JSON.parse(localStorage.getItem('userInfo') || '{}'))
+  const userInfo = ref<UserInfo>(loadInitialUserInfo())
 
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => userInfo.value.role === ROLE_ADMIN)
