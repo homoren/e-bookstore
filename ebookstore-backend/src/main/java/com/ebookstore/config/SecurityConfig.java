@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/users/login",
                                 "/api/users/register",
+                                "/api/users/check-username",
                                 "/api/books/**",
                                 "/api/announcements/**",
                                 "/api/messages/**",
