@@ -294,6 +294,22 @@ public class AdminServiceImpl implements AdminService {
         return buildSettlementDTO(settlement);
     }
 
+    // 今日实时统计:每次实时计算,不读日结表的快照
+    @Override
+    public TodayStatsDTO getTodayStats() {
+        LocalDate today = LocalDate.now();
+        DailySettlementDTO sales = settlementMapper.calculateDailySales(today);
+        BigDecimal totalCost = settlementMapper.calculateDailyCost(today);
+        BigDecimal totalSales = sales.getTotalSales() != null ? sales.getTotalSales() : BigDecimal.ZERO;
+
+        TodayStatsDTO stats = new TodayStatsDTO();
+        stats.setOrderCount(sales.getOrderCount() != null ? sales.getOrderCount() : 0);
+        stats.setTotalSales(totalSales);
+        stats.setTotalProfit(totalSales.subtract(totalCost != null ? totalCost : BigDecimal.ZERO));
+        stats.setMemberCount(customerMapper.countCustomers());
+        return stats;
+    }
+
     // ========== 客户管理 ==========
     @Override
     public List<CustomerDTO> getAllCustomers() {

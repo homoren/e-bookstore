@@ -28,4 +28,8 @@ public interface CustomerMapper {
             "WHERE u.id = #{userId} " +
             "GROUP BY u.id")
     CustomerDTO findCustomerDetail(@Param("userId") Long userId);
+
+    // 会员总数(角色=1 的普通用户)
+    @Select("SELECT COUNT(*) FROM `user` WHERE role = 1")
+    long countCustomers();
 }

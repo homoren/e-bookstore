@@ -8,6 +8,7 @@ import type {
   Message,
   Order,
   Purchase,
+  TodayStats,
 } from './types'
 
 export const createBook = (data: Record<string, unknown>) => {
@@ -42,6 +43,11 @@ export const completeOrder = (id: number, receiptSignature?: string) => {
 
 export const getTodaySettlement = () => {
   return request.get<Result<DailySettlement>>('/admin/settlement/today')
+}
+
+// 今日实时统计(订单数/销售额/利润/会员数)
+export const getTodayStats = () => {
+  return request.get<Result<TodayStats>>('/admin/stats/today')
 }
 
 export const getSettlements = (startDate?: string, endDate?: string) => {

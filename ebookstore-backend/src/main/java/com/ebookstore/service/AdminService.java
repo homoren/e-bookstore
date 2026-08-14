@@ -43,6 +43,9 @@ public interface AdminService {
     List<DailySettlementDTO> getSettlementByDateRange(LocalDate startDate, LocalDate endDate);
     DailySettlementDTO getTodaySettlement();
 
+    // 今日实时统计(不落表,实时计算,供店主后台看板)
+    TodayStatsDTO getTodayStats();
+
     // ========== 客户管理 ==========
     List<CustomerDTO> getAllCustomers();
     CustomerDTO getCustomerDetail(Long userId);

@@ -136,6 +136,11 @@ public class AdminController {
     }
 
     // ========== 日结帐管理 ==========
+    @GetMapping("/stats/today")
+    public Result<TodayStatsDTO> getTodayStats() {
+        return Result.ok(adminService.getTodayStats());
+    }
+
     @PostMapping("/settlement/generate")
     public Result<DailySettlementDTO> generateSettlement(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {

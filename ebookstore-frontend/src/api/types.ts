@@ -106,3 +106,11 @@ export type DailySettlement = Schema['DailySettlementDTO'] & {
   orderCount: number
   paidOrderCount: number
 }
+
+// 店主后台今日实时统计
+export interface TodayStats {
+  orderCount: number
+  totalSales: number
+  totalProfit: number
+  memberCount: number
+}

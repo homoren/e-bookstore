@@ -106,7 +106,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getTodaySettlement } from '@/api/admin'
+import { getTodayStats } from '@/api/admin'
 import { getAllOrders, confirmPayment, confirmDelivery } from '@/api/admin'
 import type { Order } from '@/api/types'
 
@@ -128,8 +128,16 @@ onMounted(async () => {
 
 const loadTodayData = async () => {
   try {
-    const res = await getTodaySettlement()
-    todayData.value = res.data || todayData.value
+    const res = await getTodayStats()
+    const stats = res.data
+    if (stats) {
+      todayData.value = {
+        orderCount: stats.orderCount ?? 0,
+        totalSales: stats.totalSales ?? 0,
+        totalProfit: stats.totalProfit ?? 0
+      }
+      customerCount.value = stats.memberCount ?? 0
+    }
   } catch (error) {
     console.error(error)
   }

@@ -5,6 +5,7 @@ import com.ebookstore.dto.BookDetailDTO;
 import com.ebookstore.dto.CreatePurchaseRequest;
 import com.ebookstore.dto.DailySettlementDTO;
 import com.ebookstore.dto.PurchaseDTO;
+import com.ebookstore.dto.TodayStatsDTO;
 import com.ebookstore.entity.Book;
 import com.ebookstore.entity.Purchase;
 import com.ebookstore.map.DTOMapper;
@@ -143,6 +144,25 @@ class AdminServiceImplTest {
         adminService.toggleBookStatus(10L);
 
         verify(bookMapper).updateStatus(10L, 1);
+    }
+
+    // ========== 今日统计 ==========
+    @Test
+    @DisplayName("今日统计:实时计算订单数/销售额/利润/会员数")
+    void getTodayStats_calculatesLiveData() {
+        DailySettlementDTO sales = new DailySettlementDTO();
+        sales.setTotalSales(new BigDecimal("500.00"));
+        sales.setOrderCount(3);
+        when(settlementMapper.calculateDailySales(any(LocalDate.class))).thenReturn(sales);
+        when(settlementMapper.calculateDailyCost(any(LocalDate.class))).thenReturn(new BigDecimal("300.00"));
+        when(customerMapper.countCustomers()).thenReturn(10L);
+
+        TodayStatsDTO stats = adminService.getTodayStats();
+
+        assertEquals(3, stats.getOrderCount());
+        assertEquals(new BigDecimal("500.00"), stats.getTotalSales());
+        assertEquals(new BigDecimal("200.00"), stats.getTotalProfit());
+        assertEquals(10L, stats.getMemberCount());
     }
 
     // ========== 日结 ==========
