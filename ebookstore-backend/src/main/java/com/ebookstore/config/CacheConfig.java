@@ -20,6 +20,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Configuration
 @EnableCaching
@@ -30,25 +31,34 @@ public class CacheConfig {
     public static final String BOOK_DETAIL = "bookDetail";
     public static final String ANNOUNCEMENTS = "announcements";
 
+    /** 随机偏移上限(秒),避免同缓存内多条 key 同时过期(防缓存雪崩) */
+    private static final long TTL_JITTER_SECONDS = 60;
+
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory factory) {
         RedisCacheConfiguration base = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(30))
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer()))
-                .disableCachingNullValues();
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer()));
+                // 默认缓存 null(防缓存穿透:不存在的资源也缓存,避免反复打库)
 
         Map<String, RedisCacheConfiguration> configs = new HashMap<>();
-        // 分类基本不变,缓存 1 小时;其余 30 分钟
-        configs.put(CATEGORIES, base.entryTtl(Duration.ofHours(1)));
-        configs.put(BOOK_LIST, base.entryTtl(Duration.ofMinutes(30)));
-        configs.put(BOOK_DETAIL, base.entryTtl(Duration.ofMinutes(30)));
-        configs.put(ANNOUNCEMENTS, base.entryTtl(Duration.ofMinutes(30)));
+        // 每个缓存的基础 TTL + 随机偏移,错开过期时间
+        configs.put(CATEGORIES, ttl(base, Duration.ofHours(1)));
+        configs.put(BOOK_LIST, ttl(base, Duration.ofMinutes(30)));
+        configs.put(BOOK_DETAIL, ttl(base, Duration.ofMinutes(30)));
+        configs.put(ANNOUNCEMENTS, ttl(base, Duration.ofMinutes(30)));
 
         return RedisCacheManager.builder(factory)
                 .cacheDefaults(base)
                 .withInitialCacheConfigurations(configs)
                 .build();
+    }
+
+    // 基础 TTL + 0~60s 随机偏移
+    private RedisCacheConfiguration ttl(RedisCacheConfiguration base, Duration baseTtl) {
+        long jitter = ThreadLocalRandom.current().nextLong(TTL_JITTER_SECONDS);
+        return base.entryTtl(baseTtl.plusSeconds(jitter));
     }
 
     // DTO 含 LocalDate/LocalDateTime,需注册 jsr310 模块并保留类型信息以便反序列化

@@ -31,7 +31,8 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    @Cacheable(value = CacheConfig.BOOK_DETAIL, key = "#bookId")
+    // sync=true:缓存未命中时互斥锁,只允许一个线程查库重建,其余等待(防缓存击穿)
+    @Cacheable(value = CacheConfig.BOOK_DETAIL, key = "#bookId", sync = true)
     public BookDetailDTO getBookDetail(Long bookId) {
         return bookMapper.findBookDetailById(bookId);
     }
@@ -43,7 +44,7 @@ public class BookServiceImpl implements BookService {
     }
 
     @Override
-    @Cacheable(value = CacheConfig.BOOK_LIST,
+    @Cacheable(value = CacheConfig.BOOK_LIST, sync = true,
             key = "#categoryId + '_' + #parentId + '_' + #keyword + '_' + #sort + '_' + #page + '_' + #pageSize")
     public PageResult<BookListDTO> getBooksPage(Integer categoryId, Integer parentId, String keyword,
                                                 String sort, int page, int pageSize) {
