@@ -198,6 +198,24 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.cancelOrder(orderId);
     }
 
+    // 定时关闭超期未付款订单:回补库存并置为已取消(由 OrderTimeoutTask 调度调用)
+    @Override
+    @Transactional
+    @CacheEvict(value = {CacheConfig.BOOK_LIST, CacheConfig.BOOK_DETAIL}, allEntries = true)
+    public int closeExpiredOrders() {
+        List<Order> expired = orderMapper.findExpiredUnpaidOrders(LocalDate.now());
+        int count = 0;
+        for (Order order : expired) {
+            List<OrderItem> items = orderMapper.findItemsByOrderId(order.getId());
+            for (OrderItem item : items) {
+                orderMapper.restoreStock(item.getBookId(), item.getQuantity());
+            }
+            orderMapper.cancelOrder(order.getId());
+            count++;
+        }
+        return count;
+    }
+
     private OrderDTO buildOrderDTO(Order order, List<OrderItem> items) {
         OrderDTO dto = dtoMapper.toOrderDTO(order);
         dto.setItems(dtoMapper.toOrderItemDTOs(items));

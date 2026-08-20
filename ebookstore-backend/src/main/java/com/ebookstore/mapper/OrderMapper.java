@@ -76,4 +76,8 @@ public interface OrderMapper extends BaseMapper<Order> {
     // 按状态查询订单
     @Select("SELECT * FROM `order` WHERE status = #{status} ORDER BY created_at DESC")
     List<Order> findByStatus(@Param("status") Integer status);
+
+    // 查询已超期仍未付款/未确认汇款的订单(定时任务关闭用)
+    @Select("SELECT * FROM `order` WHERE status IN (0, 1) AND payment_deadline < #{deadline}")
+    List<Order> findExpiredUnpaidOrders(@Param("deadline") LocalDate deadline);
 }

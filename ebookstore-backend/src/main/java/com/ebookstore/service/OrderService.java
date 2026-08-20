@@ -13,4 +13,5 @@ public interface OrderService {
     void confirmDelivery(Long orderId); // 店主确认配送
     void completeOrder(Long orderId, String receiptSignature); // 完成订单
     void cancelOrder(Long userId, Long orderId); // 用户取消订单（校验归属）
+    int closeExpiredOrders(); // 定时关闭超时未付款订单并回补库存
 }

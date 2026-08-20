@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -227,5 +228,23 @@ class OrderServiceImplTest {
 
         assertThrows(BusinessException.class, () -> orderService.cancelOrder(USER_ID, ORDER_ID));
         verify(orderMapper, never()).cancelOrder(anyLong());
+    }
+
+    // ========== 定时关闭超时订单 ==========
+    @Test
+    @DisplayName("定时关闭超时订单:回补库存并置为已取消")
+    void closeExpiredOrders_restoresStock() {
+        Order expired = orderWithStatus(0);
+        when(orderMapper.findExpiredUnpaidOrders(any(LocalDate.class))).thenReturn(List.of(expired));
+        OrderItem item = new OrderItem();
+        item.setBookId(10L);
+        item.setQuantity(2);
+        when(orderMapper.findItemsByOrderId(ORDER_ID)).thenReturn(List.of(item));
+
+        int count = orderService.closeExpiredOrders();
+
+        assertEquals(1, count);
+        verify(orderMapper).restoreStock(10L, 2);
+        verify(orderMapper).cancelOrder(ORDER_ID);
     }
 }
