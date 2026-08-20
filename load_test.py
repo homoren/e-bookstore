@@ -89,17 +89,27 @@ def run(base_url, concurrency, count, with_login):
     for t in targets:
         pool.extend([t] * t["weight"])
 
-    print(f"开始压测: 并发={concurrency}, 总请求={count}\n")
+    print(f"开始压测: 并发={concurrency}, 总请求={count}(Ctrl+C 可随时中断,显示已完成部分)\n")
     wall_start = time.time()
 
     results = []
-    with cf.ThreadPoolExecutor(max_workers=concurrency) as ex:
-        futures = [ex.submit(do_one, random.choice(pool), token) for _ in range(count)]
-        for f in cf.as_completed(futures):
-            results.append(f.result())
+    interrupted = False
+    try:
+        with cf.ThreadPoolExecutor(max_workers=concurrency) as ex:
+            futures = [ex.submit(do_one, random.choice(pool), token) for _ in range(count)]
+            for i, f in enumerate(cf.as_completed(futures), 1):
+                results.append(f.result())
+                # 每 10% 打印一次进度
+                if i % max(1, count // 10) == 0:
+                    print(f"  进度: {i}/{count} ({i/count*100:.0f}%)", flush=True)
+    except KeyboardInterrupt:
+        interrupted = True
+        print("\n收到 Ctrl+C,正在汇总已完成的部分...")
 
     wall = time.time() - wall_start
     total = len(results)
+    if interrupted and total < count:
+        print(f"(已中断,仅统计完成的 {total} 个请求)")
     ok_count = sum(1 for r in results if r["ok"])
     latencies = sorted(r["latency"] for r in results)
 
